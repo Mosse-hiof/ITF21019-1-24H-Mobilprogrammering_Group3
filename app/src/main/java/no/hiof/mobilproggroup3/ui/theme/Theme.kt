@@ -1,4 +1,4 @@
-package com.hiof.mobilprog_androidapp_group3.ui.theme
+package no.hiof.mobilproggroup3.ui.theme
 
 import android.app.Activity
 import android.os.Build
@@ -34,7 +34,7 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun MobilProg_AndroidApp_Group3Theme(
+fun MobilProgGroup3Theme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,

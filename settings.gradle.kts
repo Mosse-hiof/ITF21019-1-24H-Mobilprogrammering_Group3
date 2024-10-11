@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MobilProg_AndroidApp_Group3"
+rootProject.name = "MobilProgGroup3"
 include(":app")

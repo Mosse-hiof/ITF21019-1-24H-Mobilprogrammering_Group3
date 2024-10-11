@@ -1,4 +1,4 @@
-package com.hiof.mobilprog_androidapp_group3
+package no.hiof.mobilproggroup3
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -19,6 +19,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("com.hiof.mobilprog_androidapp_group3", appContext.packageName)
+        assertEquals("no.hiof.mobilproggroup3", appContext.packageName)
     }
 }

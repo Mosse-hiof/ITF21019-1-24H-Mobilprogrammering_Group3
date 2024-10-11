@@ -1,4 +1,4 @@
-package com.hiof.mobilprog_androidapp_group3
+package no.hiof.mobilproggroup3
 
 import org.junit.Test
 

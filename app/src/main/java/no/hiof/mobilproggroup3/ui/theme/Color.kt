@@ -1,4 +1,4 @@
-package com.hiof.mobilprog_androidapp_group3.ui.theme
+package no.hiof.mobilproggroup3.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
