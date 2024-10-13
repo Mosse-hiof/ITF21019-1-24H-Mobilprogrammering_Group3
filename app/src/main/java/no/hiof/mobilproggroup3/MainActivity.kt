@@ -110,7 +110,7 @@ fun MainScreen(
 
     //UI logic based on camera permission
     //UI polishing and improvements for the main screen/landing screen can be done from here
-    //I will try to show where you guys can do UI improvements via comments the best i can
+    //I will try to show where you guys where you can do UI improvements via comments the best i can
     //but i might be mistaken on some parts
     if (hasCameraPermission) {
         Column(
