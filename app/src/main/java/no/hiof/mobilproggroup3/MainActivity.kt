@@ -7,8 +7,9 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
-import android.util.Log
+//import android.util.Log
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -40,7 +41,6 @@ import java.util.concurrent.Executors
 
 class MainActivity : ComponentActivity() {
 
-    //Initializes an ExecutorService for background tasks, specifically for camera operations.
     private lateinit var cameraExecutor: ExecutorService
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,14 +52,14 @@ class MainActivity : ComponentActivity() {
                 //for navigation
                 val navController = rememberNavController()
 
-                //to save recognized text from images in a mutable compose list temporarily in aplha version
+                //saves recognized text from images in a mutable compose list temporarily in aplha version
                 //saved text gets deleted once emulator/app is closed
                 //we will probably redo/change this for when we start using persistent storage and firebase.
                 var recognizedTexts by remember { mutableStateOf(mutableListOf<String>()) }
 
-                //Navigation and screens, add future screens here
+                //Navigation and screens
                 //alot of inn-app navigation like ''go back to previous screen'' or navigation arrows are currently missing
-                //try to add some before deadline, if not just use the IDE emulator buttons for back and forward navigation
+                //we can try to add some before deadline, if not just use the IDE emulator buttons for back and forward navigation
                 NavHost(navController, startDestination = "main") {
                     composable("main") { MainScreen(navController, cameraExecutor, recognizedTexts) }
                     composable("history") { HistoryScreen(recognizedTexts) }
@@ -68,7 +68,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    //shutsdown camera
+
     override fun onDestroy() {
         super.onDestroy()
         cameraExecutor.shutdown()
@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
 
 //Main screen of the application AKA landing screen
 //opens up on camera and currently in alpha only uses simple buttons for capture/recognize etc
-//expected to be polished later
+//the capture function dosent do a traditional image capture yet, but expect to be polished/added later
 @Composable
 fun MainScreen(
     navController: NavHostController,
@@ -85,7 +85,6 @@ fun MainScreen(
     recognizedTexts: MutableList<String>
 ) {
 
-    //state management variables for the MainScreen composable
     //capturedImage: Holds the Bitmap of the image we capture
     //context: Gets the current context for accessing system resources
     //hasCameraPermission: Keeps track of whether we have camera permission
@@ -95,7 +94,6 @@ fun MainScreen(
     var hasCameraPermission by remember { mutableStateOf(false) }
     var imageCapture: ImageCapture? by remember { mutableStateOf(null) }
 
-    // Permission request launchers for the camera
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -111,8 +109,8 @@ fun MainScreen(
     }
 
     //UI logic based on camera permission
-    //UI polishing and improvements for the main screen/landing screen can be done from this
-    //I will try to guide as best as i can using comments so that you guys don't get confused
+    //UI polishing and improvements for the main screen/landing screen can be done from here
+    //I will try to show where you guys can do UI improvements via comments the best i can
     //but i might be mistaken on some parts
     if (hasCameraPermission) {
         Column(
@@ -136,7 +134,6 @@ fun MainScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             //button for capturing image, its pretty basic
-            //Improve button style or color here
             Button(onClick = {
                 imageCapture?.takePicture(
                     ContextCompat.getMainExecutor(context),
@@ -145,12 +142,14 @@ fun MainScreen(
                             val bitmap = imageProxy.toBitmapSafe()
                             if (bitmap != null) {
                                 capturedImage = bitmap
+                            }else {
+                                Toast.makeText(context, "Image Capture Failed", Toast.LENGTH_SHORT).show()
                             }
                             imageProxy.close()
                         }
 
                         override fun onError(exception: ImageCaptureException) {
-                            Log.e("MainScreen", "Image capture failed", exception)
+                            Toast.makeText(context, "Error capturing image: ${exception.message}", Toast.LENGTH_LONG).show()
                         }
                     }
                 )
@@ -162,7 +161,7 @@ fun MainScreen(
 
             //button for capture/recognize text
             Button(onClick = {
-                captureText(capturedImage, recognizedTexts)
+                captureText(capturedImage, recognizedTexts, context)
             }) {
                 Text(text = "Process Text")
             }
@@ -200,31 +199,36 @@ fun MainScreen(
 //Capture text from the image using ML Kit
 //This function checks if we have a captured image and then tries to find any text in it.
 //If it finds some text, it adds that text to our list of recognized texts.
-//We also log the recognized text so we can see what's happening
-//minimal error handling as of alpha, but we do log errors
-private fun captureText(capturedImage: Bitmap?, recognizedTexts: MutableList<String>) {
-    capturedImage?.let { imageBitmap ->
-        val image = InputImage.fromBitmap(imageBitmap, 0)
-        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-
-        recognizer.process(image)
-            .addOnSuccessListener { visionText ->
-                val recognizedText = visionText.text
-                recognizedTexts.add(recognizedText)
-                Log.d("TextRecognition", recognizedText)
-            }
-            .addOnFailureListener { e ->
-                Log.e("TextRecognition", "Text recognition failed", e)
-            }
+//so iremoved the logs and added some error handling,
+//however as of right now even a blank screen without any texts gives "Text recognition successful" message
+//on the bright side error messages given to users are kind of nice and looks ok
+private fun captureText(capturedImage: Bitmap?, recognizedTexts: MutableList<String>, context: android.content.Context) {
+    if (capturedImage == null) {
+        Toast.makeText(context, "No picture to process capture an picture first", Toast.LENGTH_SHORT).show()
+        return
     }
+
+    val image = InputImage.fromBitmap(capturedImage, 0)
+    val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+
+    recognizer.process(image)
+        .addOnSuccessListener { visionText ->
+            val recognizedText = visionText.text
+            recognizedTexts.add(recognizedText)
+            Toast.makeText(context, "Text recognition successful", Toast.LENGTH_SHORT).show()
+        }
+        .addOnFailureListener { e ->
+            Toast.makeText(context, "Failed to recognize text: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
 }
+
 
 //This our other primary requirement/functionality for the alpha build
 //This function sets up the camera preview using CameraX.
 //It binds the camera to the lifecycle of the current activity or composable
 //making sure that the camera starts and stops with the app's lifecycle.
 //We create and set up the preview and image capture use cases, then pass the ImageCapture instance to the calling function.
-//Once again there is barely any error handling, but we log any issues that arise.
+//tried to add erorhandling, but it dosent do anything
 @Composable
 fun CameraPreview(
     //Lambda to pass ImageCapture instance and to handle captured image
@@ -259,7 +263,7 @@ fun CameraPreview(
                 preview.setSurfaceProvider(view.surfaceProvider)
             }
         } catch (e: Exception) {
-            Log.e("CameraPreview", "Camera initialization failed", e)
+            Toast.makeText(context, "Failed to open camera.", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -281,7 +285,6 @@ fun CameraPreview(
     )
 }
 
-// Extension function to convert ImageProxy to Bitmap
 fun ImageProxy.toBitmapSafe(): Bitmap? {
     return try {
         val buffer = planes[0].buffer
@@ -289,7 +292,6 @@ fun ImageProxy.toBitmapSafe(): Bitmap? {
         buffer.get(bytes)
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
     } catch (e: Exception) {
-        Log.e("ImageProxy", "Failed to convert ImageProxy to Bitmap", e)
         null
     }
 }
@@ -297,7 +299,7 @@ fun ImageProxy.toBitmapSafe(): Bitmap? {
 //Composable for History Screen
 //UI improvement for the history can be done from here
 //stuff like navigation arrows to previous screen etc would be nice
-//Recognized texts are displayed in column boxes as of now.
+//Recognized texts are displayed in ugly column boxes for now.
 @Composable
 fun HistoryScreen(recognizedTexts: List<String>) {
     Column(
@@ -330,9 +332,9 @@ fun HistoryScreen(recognizedTexts: List<String>) {
 }
 
 //Composable for Settings Screen
-//UI improvement for the settings screen can be done from here
-//stuff like navigation arrows to previous screen etc would be nice
-//its a placeholder/dummy page as of now right without any functionality
+//UI improvement for the settings screen can be done from here, we'll stick to the single MainActivity file structure we have now
+//stuff like navigation arrows to previous screen etc would be nice however, but can wait til assignment 5 no rush
+//this is a placeholder/dummy screen which is literally a copy/paste of the history screen
 @Composable
 fun SettingsScreen() {
     Column(
