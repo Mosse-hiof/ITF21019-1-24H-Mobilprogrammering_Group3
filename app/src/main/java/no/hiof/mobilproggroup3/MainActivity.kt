@@ -3,9 +3,12 @@ package no.hiof.mobilproggroup3
 //DO NOT UNDER ANY CIRCUMSTANCES REMOVE ANY OF THE IMPORTED LIBRARIES
 //IF A IMPORT IS UNUSED OR GIVEN AN ERROR FOR, THEN JUST COMMENT IT OUT WITH // I WILL CHECK IT LATER
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+//import android.graphics.Color
+//import android.graphics.fonts.Font
 import android.os.Bundle
 //import android.util.Log
 import android.view.ViewGroup
@@ -20,11 +23,25 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
+// import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+//import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -38,32 +55,90 @@ import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import no.hiof.mobilproggroup3.ui.theme.MobilProgGroup3Theme
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+//import kotlin.math.roundToInt
+
+data class BottomNavigationBarItem(
+    val title: String,
+    val selectedIcon: ImageVector,
+    val unselectedIcon: ImageVector
+    )
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var cameraExecutor: ExecutorService
 
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         cameraExecutor = Executors.newSingleThreadExecutor()
 
         setContent {
             MobilProgGroup3Theme {
-                //for navigation
+                val navItems = listOf(
+                    BottomNavigationBarItem(
+                        title = "Back",
+                        selectedIcon = Icons.AutoMirrored.Filled.ArrowBack,
+                        unselectedIcon = Icons.AutoMirrored.Outlined.ArrowBack
+                    ),
+
+                    BottomNavigationBarItem(
+                        title = "main",
+                        selectedIcon = Icons.Filled.Home,
+                        unselectedIcon = Icons.Outlined.Home
+                    ),
+
+                    BottomNavigationBarItem(
+                        title = "history",
+                        selectedIcon = Icons.Filled.Email,
+                        unselectedIcon = Icons.Outlined.Email,
+                    ),
+
+                    BottomNavigationBarItem(
+                        title = "settings",
+                        selectedIcon = Icons.Filled.Settings,
+                        unselectedIcon = Icons.Outlined.Settings
+                    )
+                )
                 val navController = rememberNavController()
+                var selectedItemIndex by rememberSaveable { mutableStateOf(0) }
 
-                //saves recognized text from images in a mutable compose list temporarily in aplha version
-                //saved text gets deleted once emulator/app is closed
-                //we will probably redo/change this for when we start using persistent storage and firebase.
-                var recognizedTexts by remember { mutableStateOf(mutableListOf<String>()) }
+                Scaffold(modifier = Modifier.fillMaxWidth(),
+                    bottomBar = {
+                        NavigationBar{
+                            navItems.forEachIndexed { index, item ->
+                                NavigationBarItem(
+                                    selected = selectedItemIndex == index,
+                                    onClick = {
+                                        selectedItemIndex = index
+                                        navController.navigate(item.title)
+                                    },
+                                    icon = {
+                                        Icon(
+                                            imageVector = if ( index == selectedItemIndex) {
+                                                item.selectedIcon
+                                            } else item.unselectedIcon,
+                                            contentDescription = item.title
+                                        )
+                                    }
+                                )
 
-                //Navigation and screens
-                //alot of inn-app navigation like ''go back to previous screen'' or navigation arrows are currently missing
-                //we can try to add some before deadline, if not just use the IDE emulator buttons for back and forward navigation
-                NavHost(navController, startDestination = "main") {
-                    composable("main") { MainScreen(navController, cameraExecutor, recognizedTexts) }
-                    composable("history") { HistoryScreen(recognizedTexts) }
-                    composable("settings") { SettingsScreen() }
+                            }
+                        }
+                    }) {
+
+                    //saves recognized text from images in a mutable compose list temporarily in aplha version
+                    //saved text gets deleted once emulator/app is closed
+                    //we will probably redo/change this for when we start using persistent storage and firebase.
+                    var recognizedTexts by remember { mutableStateOf(mutableListOf<String>()) }
+
+                    //Navigation and screens
+                    //alot of inn-app navigation like ''go back to previous screen'' or navigation arrows are currently missing
+                    //we can try to add some before deadline, if not just use the IDE emulator buttons for back and forward navigation
+                    NavHost(navController, startDestination = "main") {
+                        composable("main") { MainScreen(navController, cameraExecutor, recognizedTexts) }
+                        composable("history") { HistoryScreen(recognizedTexts) }
+                        composable("settings") { SettingsScreen() }
+                    }
                 }
             }
         }
@@ -117,8 +192,8 @@ fun MainScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally
         ) {
             //title of the app, its supposed to be on the top of the screen
             //but as of right now it immediately gets hidden behind the camera screen upon opening
@@ -168,7 +243,7 @@ fun MainScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            //nav button for history screen
+            /*//nav button for history screen
             Button(onClick = { navController.navigate("history") }) {
                 Text(text = "View History")
             }
@@ -178,7 +253,7 @@ fun MainScreen(
             //nav button for settings screen
             Button(onClick = { navController.navigate("settings") }) {
                 Text(text = "Settings")
-            }
+            }*/
         }
     } else {
         //Display message while waiting for camera permission to be granted
@@ -337,6 +412,11 @@ fun HistoryScreen(recognizedTexts: List<String>) {
 //this is a placeholder/dummy screen which is literally a copy/paste of the history screen
 @Composable
 fun SettingsScreen() {
+    var pitchSliderPosition by remember { mutableStateOf(0f) }
+    var speedSliderPosition by remember { mutableStateOf(0f)}
+    var volumeSliderPosition by remember { mutableStateOf(0f)}
+    var darkModeBool by remember { mutableStateOf(false) }
+    var increaseTextSizeBool by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -344,9 +424,88 @@ fun SettingsScreen() {
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "Settings")
-        Spacer(modifier = Modifier.height(20.dp))
+        Text(modifier = Modifier
+            .padding(16.dp),
+            text = "Settings", fontWeight = FontWeight.Bold)
+        Row(modifier = Modifier
+            .padding(16.dp)) {
+            Text("Language Selection", fontWeight = FontWeight.Bold)
+        }
+        Text("TTS Settings", fontWeight = FontWeight.Bold)
+        Row () {
+            Text("Pitch")
+            Spacer(modifier = Modifier.width(16.dp))
+            Slider(value = pitchSliderPosition, onValueChange = {pitchSliderPosition = it})
+        }
 
-        Text(text = "No settings functionality is added in alpha")
+        Text(modifier = Modifier
+            .padding(16.dp),
+            text = pitchSliderPosition.toString() + " hz")
+
+        Row(){
+            Text("Speed")
+            Spacer(modifier = Modifier.width(16.dp))
+            Slider(value = speedSliderPosition,
+                   onValueChange = {speedSliderPosition = it},
+                    valueRange = 100f..500f)
+        }
+        Text(modifier = Modifier
+            .padding(16.dp),text = speedSliderPosition.toString() + " words/min")
+
+        // Row with volume slider
+        Row(){
+            Text("Volume")
+            Spacer(modifier = Modifier.width(10.dp))
+            Slider(value = volumeSliderPosition,
+                   onValueChange = {volumeSliderPosition = it},
+                   valueRange = 0f..10f,
+                steps = 10)
+        }
+
+        // Text displaying value of volumeslider
+        Text(volumeSliderPosition.toString(),
+            fontWeight = FontWeight.Bold)
+
+
+        // Accessibility settings start here. These include dark mode and increasing text size
+        Text(modifier = Modifier
+            .padding(16.dp),
+            text = "Accessibility Options",
+            fontWeight = FontWeight.Bold)
+
+        // Row with switche and describable text for settings for dark mode and increasing size
+        Row (
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Switch(modifier = Modifier.padding(16.dp),
+                checked = darkModeBool,
+                onCheckedChange = { darkModeBool = it }
+            )
+            Spacer(modifier = Modifier.width((16.dp)))
+            Text("Dark Mode")
+        }
+
+        // Row with switch
+        Row (
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Switch(modifier = Modifier
+                .padding(16.dp), checked = increaseTextSizeBool,
+                onCheckedChange = { increaseTextSizeBool = it }
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = "Increase Text Size"
+            )
+        }
+
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview
+@Composable
+fun SettingsPreview() {
+    MobilProgGroup3Theme {
+        SettingsScreen()
     }
 }
