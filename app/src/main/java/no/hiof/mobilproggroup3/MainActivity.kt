@@ -126,14 +126,13 @@ class MainActivity : ComponentActivity() {
                         }
                     }) {
 
-                    //saves recognized text from images in a mutable compose list temporarily in aplha version
+                    //saves recognized text from images in a list temporarily in aplha version
                     //saved text gets deleted once emulator/app is closed
                     //we will probably redo/change this for when we start using persistent storage and firebase.
                     var recognizedTexts by remember { mutableStateOf(mutableListOf<String>()) }
 
                     //Navigation and screens
-                    //alot of inn-app navigation like ''go back to previous screen'' or navigation arrows are currently missing
-                    //we can try to add some before deadline, if not just use the IDE emulator buttons for back and forward navigation
+                    //Some needed navigation added
                     NavHost(navController, startDestination = "main") {
                         composable("main") { MainScreen(navController, cameraExecutor, recognizedTexts) }
                         composable("history") { HistoryScreen(recognizedTexts) }
@@ -243,21 +242,9 @@ fun MainScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            /*//nav button for history screen
-            Button(onClick = { navController.navigate("history") }) {
-                Text(text = "View History")
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            //nav button for settings screen
-            Button(onClick = { navController.navigate("settings") }) {
-                Text(text = "Settings")
-            }*/
         }
     } else {
         //Display message while waiting for camera permission to be granted
-        //maybe add some better effects and some delays/loading effect gifs and stuff
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -273,8 +260,8 @@ fun MainScreen(
 //This is one of our primary requirements/functionality
 //Capture text from the image using ML Kit
 //This function checks if we have a captured image and then tries to find any text in it.
-//If it finds some text, it adds that text to our list of recognized texts.
-//so iremoved the logs and added some error handling,
+//If it finds some text, it adds that text to our list of recognized texts. If no text is found it just adds blank to the history screen
+//removed the logs and added some error handling,
 //however as of right now even a blank screen without any texts gives "Text recognition successful" message
 //on the bright side error messages given to users are kind of nice and looks ok
 private fun captureText(capturedImage: Bitmap?, recognizedTexts: MutableList<String>, context: android.content.Context) {
@@ -372,8 +359,6 @@ fun ImageProxy.toBitmapSafe(): Bitmap? {
 }
 
 //Composable for History Screen
-//UI improvement for the history can be done from here
-//stuff like navigation arrows to previous screen etc would be nice
 //Recognized texts are displayed in ugly column boxes for now.
 @Composable
 fun HistoryScreen(recognizedTexts: List<String>) {
@@ -407,9 +392,6 @@ fun HistoryScreen(recognizedTexts: List<String>) {
 }
 
 //Composable for Settings Screen
-//UI improvement for the settings screen can be done from here, we'll stick to the single MainActivity file structure we have now
-//stuff like navigation arrows to previous screen etc would be nice however, but can wait til assignment 5 no rush
-//this is a placeholder/dummy screen which is literally a copy/paste of the history screen
 @Composable
 fun SettingsScreen() {
     var pitchSliderPosition by remember { mutableStateOf(0f) }
