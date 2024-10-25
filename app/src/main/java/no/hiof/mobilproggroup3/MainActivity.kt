@@ -40,8 +40,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFontFamilyResolver
 //import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -52,7 +54,7 @@ import androidx.navigation.compose.rememberNavController
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import no.hiof.mobilproggroup3.ui.theme.MobilProgGroup3Theme
+import no.hiof.mobilproggroup3.compose.MobilProgGroup3Theme
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 //import kotlin.math.roundToInt
@@ -99,6 +101,7 @@ class MainActivity : ComponentActivity() {
                         unselectedIcon = Icons.Outlined.Settings
                     )
                 )
+
                 val navController = rememberNavController()
                 var selectedItemIndex by rememberSaveable { mutableStateOf(0) }
 
@@ -142,6 +145,8 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+
 
     override fun onDestroy() {
         super.onDestroy()
@@ -414,7 +419,7 @@ fun SettingsScreen() {
             Text("Language Selection", fontWeight = FontWeight.Bold)
         }
         Text("TTS Settings", fontWeight = FontWeight.Bold)
-        Row () {
+        Row {
             Text("Pitch")
             Spacer(modifier = Modifier.width(16.dp))
             Slider(value = pitchSliderPosition, onValueChange = {pitchSliderPosition = it})
@@ -424,7 +429,7 @@ fun SettingsScreen() {
             .padding(16.dp),
             text = pitchSliderPosition.toString() + " hz")
 
-        Row(){
+        Row {
             Text("Speed")
             Spacer(modifier = Modifier.width(16.dp))
             Slider(value = speedSliderPosition,
@@ -435,7 +440,7 @@ fun SettingsScreen() {
             .padding(16.dp),text = speedSliderPosition.toString() + " words/min")
 
         // Row with volume slider
-        Row(){
+        Row {
             Text("Volume")
             Spacer(modifier = Modifier.width(10.dp))
             Slider(value = volumeSliderPosition,
