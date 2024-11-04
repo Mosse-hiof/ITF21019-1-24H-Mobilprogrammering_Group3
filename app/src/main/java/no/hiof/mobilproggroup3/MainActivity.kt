@@ -52,6 +52,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
 import androidx.navigation.compose.rememberNavController
+import com.google.firebase.Firebase
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.auth
+import com.google.firebase.firestore.firestore
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
@@ -72,11 +76,16 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var textToSpeech: TextToSpeech
 
+    //Firebase
+    private val db = Firebase.firestore
+    private val auth = Firebase.auth
+
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         cameraExecutor = Executors.newSingleThreadExecutor()
         textToSpeech = TextToSpeech(this, this)
+        FirebaseApp.initializeApp(this)
 
         setContent {
             MobilProgGroup3Theme {

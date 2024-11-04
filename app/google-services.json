@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "516342190265",
+    "project_id": "snapreaderapp",
+    "storage_bucket": "snapreaderapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:516342190265:android:c0527d2e4a93443c234b68",
+        "android_client_info": {
+          "package_name": "no.hiof.mobilproggroup3"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6CeIiAvbCptcUOieJIf8snGGtIyzlHws"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

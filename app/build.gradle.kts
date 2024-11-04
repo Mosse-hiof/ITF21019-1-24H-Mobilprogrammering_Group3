@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -94,6 +95,12 @@ dependencies {
 
     // dependencies for google fonts
     implementation (libs.androidx.ui.text.google.fonts)
+
+    //firebase
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation(libs.firebase.firestore.ktx)
+    implementation(libs.firebase.auth.ktx)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
