@@ -10,6 +10,7 @@ import android.graphics.BitmapFactory
 //import android.graphics.Color
 //import android.graphics.fonts.Font
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
 //import android.util.Log
 import android.view.ViewGroup
 import android.widget.Toast
@@ -58,6 +59,7 @@ import no.hiof.mobilproggroup3.compose.MobilProgGroup3Theme
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 //import kotlin.math.roundToInt
+import java.util.Locale
 
 data class BottomNavigationBarItem(
     val title: String,
@@ -65,14 +67,16 @@ data class BottomNavigationBarItem(
     val unselectedIcon: ImageVector
     )
 
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var cameraExecutor: ExecutorService
+    private lateinit var textToSpeech: TextToSpeech
 
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         cameraExecutor = Executors.newSingleThreadExecutor()
+        textToSpeech = TextToSpeech(this, this)
 
         setContent {
             MobilProgGroup3Theme {
@@ -137,20 +141,39 @@ class MainActivity : ComponentActivity() {
                     //Navigation and screens
                     //Some needed navigation added
                     NavHost(navController, startDestination = "main") {
-                        composable("main") { MainScreen(navController, cameraExecutor, recognizedTexts) }
+                        composable("main") { MainScreen(navController, cameraExecutor, recognizedTexts, this@MainActivity::readOutLoud) }
                         composable("history") { HistoryScreen(recognizedTexts) }
-                        composable("settings") { SettingsScreen() }
+                        composable("settings") { SettingsScreen(textToSpeech) }
                     }
                 }
             }
         }
     }
 
-
+    //android tts ''built inn'' api, no dependencies needed
+    //but method names must match the required Android Text-to-Speech API conventions
+    //reference: https://developer.android.com/reference/kotlin/android/speech/tts/TextToSpeech.OnInitListener
+    override fun onInit(status: Int){
+        if (status == TextToSpeech.SUCCESS) {
+            val result = textToSpeech.setLanguage(Locale.ENGLISH)
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED){
+                Toast.makeText(this, "TTS language not supported.", Toast.LENGTH_SHORT).show()
+            }
+        }else {
+            Toast.makeText(this, "TTS initialization failed.", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     override fun onDestroy() {
         super.onDestroy()
         cameraExecutor.shutdown()
+        textToSpeech.stop()
+        textToSpeech.shutdown()
+    }
+    //reading the captured text out load
+    //was initially outside the main activity, but had to move it into mainactivity as the method was no recognized
+    private fun readOutLoud(text: String) {
+        textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
     }
 }
 
@@ -161,7 +184,8 @@ class MainActivity : ComponentActivity() {
 fun MainScreen(
     navController: NavHostController,
     cameraExecutor: ExecutorService,
-    recognizedTexts: MutableList<String>
+    recognizedTexts: MutableList<String>,
+    readOutLoud: (String) -> Unit
 ) {
 
     //capturedImage: Holds the Bitmap of the image we capture
@@ -240,7 +264,7 @@ fun MainScreen(
 
             //button for capture/recognize text
             Button(onClick = {
-                captureText(capturedImage, recognizedTexts, context)
+                captureText(capturedImage, recognizedTexts, context, readOutLoud)
             }) {
                 Text(text = "Process Text")
             }
@@ -269,7 +293,8 @@ fun MainScreen(
 //removed the logs and added some error handling,
 //however as of right now even a blank screen without any texts gives "Text recognition successful" message
 //on the bright side error messages given to users are kind of nice and looks ok
-private fun captureText(capturedImage: Bitmap?, recognizedTexts: MutableList<String>, context: android.content.Context) {
+private fun captureText(capturedImage: Bitmap?, recognizedTexts: MutableList<String>, context: android.content.Context,  readOutLoud: (String) -> Unit) {
+
     if (capturedImage == null) {
         Toast.makeText(context, "No picture to process capture an picture first", Toast.LENGTH_SHORT).show()
         return
@@ -283,6 +308,8 @@ private fun captureText(capturedImage: Bitmap?, recognizedTexts: MutableList<Str
             val recognizedText = visionText.text
             recognizedTexts.add(recognizedText)
             Toast.makeText(context, "Text recognition successful", Toast.LENGTH_SHORT).show()
+
+            readOutLoud(recognizedText)
         }
         .addOnFailureListener { e ->
             Toast.makeText(context, "Failed to recognize text: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -397,10 +424,11 @@ fun HistoryScreen(recognizedTexts: List<String>) {
 }
 
 //Composable for Settings Screen
+//setting scren now has some functionality, specificlly the the slider for tts pitch and speed
 @Composable
-fun SettingsScreen() {
-    var pitchSliderPosition by remember { mutableStateOf(0f) }
-    var speedSliderPosition by remember { mutableStateOf(0f)}
+fun SettingsScreen(textToSpeech: TextToSpeech) {
+    var pitchSliderPosition by remember { mutableStateOf(1.0f) }
+    var speedSliderPosition by remember { mutableStateOf(1.0f)}
     var volumeSliderPosition by remember { mutableStateOf(0f)}
     var darkModeBool by remember { mutableStateOf(false) }
     var increaseTextSizeBool by remember { mutableStateOf(false) }
@@ -422,7 +450,11 @@ fun SettingsScreen() {
         Row {
             Text("Pitch")
             Spacer(modifier = Modifier.width(16.dp))
-            Slider(value = pitchSliderPosition, onValueChange = {pitchSliderPosition = it})
+            Slider(value = pitchSliderPosition,
+                onValueChange = {pitchSliderPosition = it },
+                onValueChangeFinished = { textToSpeech.setPitch(pitchSliderPosition)
+                }, valueRange = 0.5f..2.0f
+            )
         }
 
         Text(modifier = Modifier
@@ -433,8 +465,12 @@ fun SettingsScreen() {
             Text("Speed")
             Spacer(modifier = Modifier.width(16.dp))
             Slider(value = speedSliderPosition,
-                   onValueChange = {speedSliderPosition = it},
-                    valueRange = 100f..500f)
+                onValueChange = {speedSliderPosition = it },
+                onValueChangeFinished = {
+                    textToSpeech.setSpeechRate(speedSliderPosition)
+                },
+                valueRange = 0.5f..2.0f
+            )
         }
         Text(modifier = Modifier
             .padding(16.dp),text = speedSliderPosition.toString() + " words/min")
@@ -493,6 +529,6 @@ fun SettingsScreen() {
 @Composable
 fun SettingsPreview() {
     MobilProgGroup3Theme {
-        SettingsScreen()
+        SettingsScreen(textToSpeech = TextToSpeech(LocalContext.current) { })
     }
 }
