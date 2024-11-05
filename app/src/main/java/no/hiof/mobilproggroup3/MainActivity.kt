@@ -91,12 +91,6 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             MobilProgGroup3Theme {
                 val navItems = listOf(
                     BottomNavigationBarItem(
-                        title = "Back",
-                        selectedIcon = Icons.AutoMirrored.Filled.ArrowBack,
-                        unselectedIcon = Icons.AutoMirrored.Outlined.ArrowBack
-                    ),
-
-                    BottomNavigationBarItem(
                         title = "main",
                         selectedIcon = Icons.Filled.Home,
                         unselectedIcon = Icons.Outlined.Home
