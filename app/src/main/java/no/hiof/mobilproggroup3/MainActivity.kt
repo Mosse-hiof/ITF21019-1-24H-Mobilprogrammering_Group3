@@ -267,7 +267,7 @@ fun MainScreen(
 
             Spacer(modifier = Modifier.height(80.dp))
 
-            //button for capturing image, its pretty basic
+            //button for capturing image
             Row (){
             IconButton(onClick = {
                 imageCapture?.takePicture(
@@ -293,12 +293,21 @@ fun MainScreen(
                 }
             )
             }) {
-                Image(
+                //if darktheme on phone camera button changes to white, else black camera button
+                //code logic is not visible on emulator, but on the mobile device it works.
+                if(isSystemInDarkTheme()) {
+                    Image(
+                        painterResource(R.drawable.baseline_camera_24_white),
+                        contentDescription = "Camera button, capture text",
+                        modifier = Modifier.size(48.dp)
+                    )
+                } else {
+                    Image(
                     painterResource(R.drawable.baseline_camera_24),
                     contentDescription = "Camera button, capture text",
-                    modifier = Modifier.size(48.dp)
-                )
+                    modifier = Modifier.size(48.dp))
                 }
+            }
             Spacer(modifier = Modifier.height(20.dp))
 
             //button for capture/recognize text
