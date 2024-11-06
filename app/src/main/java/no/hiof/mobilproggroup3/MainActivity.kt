@@ -83,9 +83,9 @@ import java.util.Locale
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.size
-import androidx.compose.ui.layout.HorizontalAlignmentLine
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.sp
-import org.intellij.lang.annotations.JdkConstants.HorizontalAlignment
+import no.hiof.mobilproggroup3.compose.primaryLight
 
 
 data class BottomNavigationBarItem(
@@ -214,10 +214,6 @@ fun MainScreen(
     readOutLoud: (String) -> Unit
 ) {
 
-    //colors
-    MaterialTheme {
-        darkColorScheme(primaryDark)
-    }
     //capturedImage: Holds the Bitmap of the image we capture
     //context: Gets the current context for accessing system resources
     //hasCameraPermission: Keeps track of whether we have camera permission
@@ -258,8 +254,8 @@ fun MainScreen(
             //maybe move camera screen a bit down to show title
             Text(
                 text = "SnapSpeech: Capture and Recognize Text",
-
-
+                fontSize = 18.sp,
+                fontStyle = FontStyle.Italic,
             )
 
 
@@ -299,7 +295,7 @@ fun MainScreen(
             }) {
                 Image(
                     painterResource(R.drawable.baseline_camera_24),
-                    contentDescription = "Camera Icon",
+                    contentDescription = "Camera button, capture text",
                     modifier = Modifier.size(48.dp)
                 )
                 }
@@ -310,7 +306,7 @@ fun MainScreen(
                 captureText(capturedImage, recognizedTexts, context, readOutLoud)
 
             }) {
-                Icon(Icons.Outlined.Add, contentDescription = "snap button", modifier = Modifier.size(48.dp))
+                Icon(Icons.Outlined.Add, contentDescription = "process text", modifier = Modifier.size(48.dp))
                 }}
 
            Spacer(modifier = Modifier.height(20.dp))
