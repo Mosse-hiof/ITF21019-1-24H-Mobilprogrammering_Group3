@@ -7,12 +7,14 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.ColorFilter
 //import android.graphics.Color
 //import android.graphics.fonts.Font
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 //import android.util.Log
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,25 +23,38 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.AddCircle
 // import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
+import androidx.compose.material3.CheckboxDefaults.colors
+import androidx.compose.material3.NavigationBarDefaults.containerColor
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 //import androidx.compose.ui.text.font.FontStyle
@@ -60,10 +75,16 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import no.hiof.mobilproggroup3.compose.MobilProgGroup3Theme
+import no.hiof.mobilproggroup3.compose.primaryDark
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 //import kotlin.math.roundToInt
 import java.util.Locale
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.layout.size
+
+
 
 data class BottomNavigationBarItem(
     val title: String,
@@ -191,6 +212,10 @@ fun MainScreen(
     readOutLoud: (String) -> Unit
 ) {
 
+    //colors
+    MaterialTheme {
+        darkColorScheme(primaryDark)
+    }
     //capturedImage: Holds the Bitmap of the image we capture
     //context: Gets the current context for accessing system resources
     //hasCameraPermission: Keeps track of whether we have camera permission
@@ -231,51 +256,60 @@ fun MainScreen(
             //maybe move camera screen a bit down to show title
             Text(text = "SnapSpeech: Capture and Recognize Text")
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(80.dp))
 
             CameraPreview(imageCapture = { capture -> imageCapture = capture }) { bitmap ->
                 capturedImage = bitmap
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(80.dp))
 
             //button for capturing image, its pretty basic
-            Button(onClick = {
+            Row (){
+            IconButton(onClick = {
                 imageCapture?.takePicture(
-                    ContextCompat.getMainExecutor(context),
-                    object : ImageCapture.OnImageCapturedCallback() {
-                        override fun onCaptureSuccess(imageProxy: ImageProxy) {
-                            val bitmap = imageProxy.toBitmapSafe()
-                            if (bitmap != null) {
-                                capturedImage = bitmap
-                            }else {
-                                Toast.makeText(context, "Image Capture Failed", Toast.LENGTH_SHORT).show()
-                            }
-                            imageProxy.close()
+                ContextCompat.getMainExecutor(context),
+                object : ImageCapture.OnImageCapturedCallback() {
+                    override fun onCaptureSuccess(imageProxy: ImageProxy) {
+                        val bitmap = imageProxy.toBitmapSafe()
+                        if (bitmap != null) {
+                            capturedImage = bitmap
+                        } else {
+                            Toast.makeText(context, "Image Capture Failed", Toast.LENGTH_SHORT).show()
                         }
-
-                        override fun onError(exception: ImageCaptureException) {
-                            Toast.makeText(context, "Error capturing image: ${exception.message}", Toast.LENGTH_LONG).show()
-                        }
+                        imageProxy.close()
                     }
-                )
-            }) {
-                Text(text = "Capture Text")
-            }
 
+                    override fun onError(exception: ImageCaptureException) {
+                        Toast.makeText(
+                            context,
+                            "Error capturing image: ${exception.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            )
+            }) {
+                Image(
+                    painterResource(R.drawable.baseline_camera_24),
+                    contentDescription = "Camera Icon",
+                    modifier = Modifier.size(48.dp)
+                )
+                }
             Spacer(modifier = Modifier.height(20.dp))
 
             //button for capture/recognize text
-            Button(onClick = {
+            IconButton(onClick = {
                 captureText(capturedImage, recognizedTexts, context, readOutLoud)
+
             }) {
-                Text(text = "Process Text")
-            }
+                Icon(Icons.Outlined.Add, contentDescription = "snap button", modifier = Modifier.size(48.dp))
+                }}
 
-            Spacer(modifier = Modifier.height(20.dp))
+           Spacer(modifier = Modifier.height(20.dp))
 
-        }
-    } else {
+                    }
+        } else {
         //Display message while waiting for camera permission to be granted
         Column(
             modifier = Modifier
@@ -318,7 +352,6 @@ private fun captureText(capturedImage: Bitmap?, recognizedTexts: MutableList<Str
             Toast.makeText(context, "Failed to recognize text: ${e.message}", Toast.LENGTH_SHORT).show()
         }
 }
-
 
 //This our other primary requirement/functionality for the alpha build
 //This function sets up the camera preview using CameraX.
@@ -483,8 +516,8 @@ fun SettingsScreen(textToSpeech: TextToSpeech) {
             Text("Volume")
             Spacer(modifier = Modifier.width(10.dp))
             Slider(value = volumeSliderPosition,
-                   onValueChange = {volumeSliderPosition = it},
-                   valueRange = 0f..10f,
+                onValueChange = {volumeSliderPosition = it},
+                valueRange = 0f..10f,
                 steps = 10)
         }
 
@@ -501,7 +534,7 @@ fun SettingsScreen(textToSpeech: TextToSpeech) {
 
         // Row with switche and describable text for settings for dark mode and increasing size
         Row (
-            horizontalArrangement = Arrangement.Start
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Switch(modifier = Modifier.padding(16.dp),
                 checked = darkModeBool,
@@ -513,7 +546,7 @@ fun SettingsScreen(textToSpeech: TextToSpeech) {
 
         // Row with switch
         Row (
-            horizontalArrangement = Arrangement.Start
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Switch(modifier = Modifier
                 .padding(16.dp), checked = increaseTextSizeBool,
@@ -527,6 +560,7 @@ fun SettingsScreen(textToSpeech: TextToSpeech) {
 
     }
 }
+
 
 @androidx.compose.ui.tooling.preview.Preview
 @Composable
