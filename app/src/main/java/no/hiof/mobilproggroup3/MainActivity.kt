@@ -83,7 +83,9 @@ import java.util.Locale
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.size
-
+import androidx.compose.ui.layout.HorizontalAlignmentLine
+import androidx.compose.ui.unit.sp
+import org.intellij.lang.annotations.JdkConstants.HorizontalAlignment
 
 
 data class BottomNavigationBarItem(
@@ -249,12 +251,17 @@ fun MainScreen(
                 .fillMaxSize()
                 .padding(16.dp),
                 verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             //title of the app, its supposed to be on the top of the screen
             //but as of right now it immediately gets hidden behind the camera screen upon opening
             //maybe move camera screen a bit down to show title
-            Text(text = "SnapSpeech: Capture and Recognize Text")
+            Text(
+                text = "SnapSpeech: Capture and Recognize Text",
+
+
+            )
+
 
             Spacer(modifier = Modifier.height(80.dp))
 
@@ -435,9 +442,9 @@ fun HistoryScreen(recognizedTexts: List<String>) {
             .fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.Start
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "History Log", style = MaterialTheme.typography.titleLarge)
+        Text(text = "History Log", fontWeight = FontWeight.Bold, fontSize = 25.sp)
         Spacer(modifier = Modifier.height(20.dp))
 
         if (recognizedTexts.isEmpty()) {
@@ -477,7 +484,7 @@ fun SettingsScreen(textToSpeech: TextToSpeech) {
     ) {
         Text(modifier = Modifier
             .padding(16.dp),
-            text = "Settings", fontWeight = FontWeight.Bold)
+            text = "Settings", fontWeight = FontWeight.Bold, fontSize = 25.sp)
         Row(modifier = Modifier
             .padding(16.dp)) {
             Text("Language Selection", fontWeight = FontWeight.Bold)
