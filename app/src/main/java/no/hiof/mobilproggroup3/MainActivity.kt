@@ -46,7 +46,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.Firebase
-import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.firestore
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
@@ -81,7 +80,6 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         super.onCreate(savedInstanceState)
         cameraExecutor = Executors.newSingleThreadExecutor()
         textToSpeech = TextToSpeech(this, this)
-        FirebaseApp.initializeApp(this)
 
         //to load the actual setting values from firebase and actually apply them instead of just loading the UI, previously only loaded UI, but pitch and speed changes didnt take effect
         loadSettings { pitch, speed ->
@@ -202,8 +200,6 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
                     textToSpeech.setPitch(pitch)
                     textToSpeech.setSpeechRate(speed)
-
-                    onSettingsLoaded(pitch, speed)
                 }
             }
             .addOnFailureListener { e ->
