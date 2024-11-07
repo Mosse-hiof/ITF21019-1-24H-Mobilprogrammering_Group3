@@ -462,8 +462,19 @@ fun HistoryScreen(recognizedTexts: List<String>) {
                             .fillMaxWidth()
                             .padding(8.dp)
                             .border(1.dp, MaterialTheme.colorScheme.primary)
+                            .width(20.dp)
                     ) {
-                        BasicText(text = recognizedText)
+                        if(isSystemInDarkTheme()) {
+                            Text(
+                                text = recognizedText,
+                                color = Color.White,
+                                fontSize = 12.sp)
+                        } else {
+                            Text(
+                                text = recognizedText,
+                                color = Color.Black,
+                                fontSize = 12.sp)
+                        }
                     }
                 }
             }
