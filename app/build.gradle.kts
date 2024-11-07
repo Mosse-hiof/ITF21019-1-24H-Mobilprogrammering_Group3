@@ -44,7 +44,6 @@ android {
         compose = true
     }
     //Its not the latest versions, but its a stable version which is good enough
-    //i cannot stress this enough DO NOT FUCK AROUND WITH THIS
     //versions 1.5.3 and below as well as 1.5.5 and above are cursed
     //You can check compatibility here
     //https://developer.android.com/jetpack/androidx/releases/compose-kotlin
@@ -63,7 +62,7 @@ android {
 //Same as compiler version above, do not mess with these dependencies even if some are redundant
 //if you need to add specific dependencies for various functionalities use https://mvnrepository.com
 //do not pick up dependencies from stackoverflow or reddit which are most likely deprecated
-//and will fuck up our currently working stuff
+//and will mess up our currently working stuff
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

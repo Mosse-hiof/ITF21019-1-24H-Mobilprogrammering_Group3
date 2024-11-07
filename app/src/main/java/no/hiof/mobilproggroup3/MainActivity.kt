@@ -1,20 +1,14 @@
 package no.hiof.mobilproggroup3
 
-//DO NOT UNDER ANY CIRCUMSTANCES REMOVE ANY OF THE IMPORTED LIBRARIES
-//IF A IMPORT IS UNUSED OR GIVEN AN ERROR FOR, THEN JUST COMMENT IT OUT WITH // I WILL CHECK IT LATER
+//Libraries and imports are now good, we have nothing to worry about. Remove and add as needed
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.ColorFilter
-//import android.graphics.Color
-//import android.graphics.fonts.Font
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
-//import android.util.Log
 import android.view.ViewGroup
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -24,42 +18,26 @@ import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.AddCircle
-// import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
-import androidx.compose.material3.CheckboxDefaults.colors
-import androidx.compose.material3.NavigationBarDefaults.containerColor
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFontFamilyResolver
-//import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -69,23 +47,20 @@ import androidx.navigation.compose.*
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import no.hiof.mobilproggroup3.compose.MobilProgGroup3Theme
-import no.hiof.mobilproggroup3.compose.primaryDark
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-//import kotlin.math.roundToInt
 import java.util.Locale
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.sp
-import no.hiof.mobilproggroup3.compose.primaryLight
+import com.google.firebase.firestore.FirebaseFirestore
 
 
 data class BottomNavigationBarItem(
@@ -99,9 +74,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var textToSpeech: TextToSpeech
 
-    //Firebase
     private val db = Firebase.firestore
-    private val auth = Firebase.auth
 
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -109,6 +82,11 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         cameraExecutor = Executors.newSingleThreadExecutor()
         textToSpeech = TextToSpeech(this, this)
         FirebaseApp.initializeApp(this)
+
+        //to load the actual setting values from firebase and actually apply them instead of just loading the UI, previously only loaded UI, but pitch and speed changes didnt take effect
+        loadSettings { pitch, speed ->
+            textToSpeech.setPitch(pitch)
+            textToSpeech.setSpeechRate(speed)}
 
         setContent {
             MobilProgGroup3Theme {
@@ -133,7 +111,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                 )
 
                 val navController = rememberNavController()
-                var selectedItemIndex by rememberSaveable { mutableStateOf(0) }
+                var selectedItemIndex by rememberSaveable { mutableIntStateOf(0) }
 
                 Scaffold(modifier = Modifier.fillMaxWidth(),
                     bottomBar = {
@@ -159,17 +137,13 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                         }
                     }) {
 
-                    //saves recognized text from images in a list temporarily in aplha version
-                    //saved text gets deleted once emulator/app is closed
-                    //we will probably redo/change this for when we start using persistent storage and firebase.
-                    var recognizedTexts by remember { mutableStateOf(mutableListOf<String>()) }
 
                     //Navigation and screens
                     //Some needed navigation added
                     NavHost(navController, startDestination = "main") {
-                        composable("main") { MainScreen(navController, cameraExecutor, recognizedTexts, this@MainActivity::readOutLoud) }
-                        composable("history") { HistoryScreen(recognizedTexts) }
-                        composable("settings") { SettingsScreen(textToSpeech) }
+                        composable("main") { MainScreen(navController, cameraExecutor, this@MainActivity::readOutLoud, db=db) }
+                        composable("history") { HistoryScreen(db=db) }
+                        composable("settings") { SettingsScreen(textToSpeech, saveSettings = ::saveSettings, loadSettings = ::loadSettings) }
                     }
                 }
             }
@@ -197,9 +171,44 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         textToSpeech.shutdown()
     }
     //reading the captured text out load
-    //was initially outside the main activity, but had to move it into mainactivity as the method was no recognized
+    //was initially outside the main activity, but had to move it into mainactivity as the method was not recognized
     private fun readOutLoud(text: String) {
         textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+    }
+
+    //saving and loading settings
+    //saved settings and history can be seen here: https://console.firebase.google.com/project/snapreaderapp/firestore/databases/-default-/data
+    //you might need to login with a google account to view the data
+    private fun saveSettings(pitch: Float, speed: Float) {
+        val settings = hashMapOf("pitch" to pitch, "speed" to speed)
+        db.collection("settings").document("userSettings")
+            .set(settings)
+            .addOnSuccessListener {
+                Toast.makeText(this, "Settings saved successfully", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Failed to save settings: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun loadSettings(onSettingsLoaded: (Float, Float) -> Unit) {
+        db.collection("settings").document("userSettings")
+            .get()
+            .addOnSuccessListener { document ->
+                if (document != null && document.exists()) {
+                    val pitch = document.getDouble("pitch")?.toFloat() ?: 1.0f
+                    val speed = document.getDouble("speed")?.toFloat() ?: 1.0f
+                    onSettingsLoaded(pitch, speed)
+
+                    textToSpeech.setPitch(pitch)
+                    textToSpeech.setSpeechRate(speed)
+
+                    onSettingsLoaded(pitch, speed)
+                }
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Failed to load settings: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
     }
 }
 
@@ -210,8 +219,8 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 fun MainScreen(
     navController: NavHostController,
     cameraExecutor: ExecutorService,
-    recognizedTexts: MutableList<String>,
-    readOutLoud: (String) -> Unit
+    readOutLoud: (String) -> Unit,
+    db: FirebaseFirestore
 ) {
 
     //capturedImage: Holds the Bitmap of the image we capture
@@ -253,7 +262,7 @@ fun MainScreen(
             //but as of right now it immediately gets hidden behind the camera screen upon opening
             //maybe move camera screen a bit down to show title
             Text(
-                text = "SnapSpeech: Capture and Recognize Text",
+                text = "SnapReader: Capture and Recognize Text",
                 fontSize = 18.sp,
                 fontStyle = FontStyle.Italic,
             )
@@ -268,7 +277,7 @@ fun MainScreen(
             Spacer(modifier = Modifier.height(80.dp))
 
             //button for capturing image
-            Row (){
+            Row {
             IconButton(onClick = {
                 imageCapture?.takePicture(
                 ContextCompat.getMainExecutor(context),
@@ -312,7 +321,7 @@ fun MainScreen(
 
             //button for capture/recognize text
             IconButton(onClick = {
-                captureText(capturedImage, recognizedTexts, context, readOutLoud)
+                captureText(capturedImage, context, readOutLoud, db)
 
             }) {
                 Icon(Icons.Outlined.Add, contentDescription = "process text", modifier = Modifier.size(48.dp))
@@ -340,9 +349,7 @@ fun MainScreen(
 //This function checks if we have a captured image and then tries to find any text in it.
 //If it finds some text, it adds that text to our list of recognized texts. If no text is found it just adds blank to the history screen
 //removed the logs and added some error handling,
-//however as of right now even a blank screen without any texts gives "Text recognition successful" message
-//on the bright side error messages given to users are kind of nice and looks ok
-private fun captureText(capturedImage: Bitmap?, recognizedTexts: MutableList<String>, context: android.content.Context,  readOutLoud: (String) -> Unit) {
+private fun captureText(capturedImage: Bitmap?, context: android.content.Context,  readOutLoud: (String) -> Unit, db: FirebaseFirestore) {
 
     if (capturedImage == null) {
         Toast.makeText(context, "No picture to process capture an picture first", Toast.LENGTH_SHORT).show()
@@ -355,10 +362,15 @@ private fun captureText(capturedImage: Bitmap?, recognizedTexts: MutableList<Str
     recognizer.process(image)
         .addOnSuccessListener { visionText ->
             val recognizedText = visionText.text
-            recognizedTexts.add(recognizedText)
             Toast.makeText(context, "Text recognition successful", Toast.LENGTH_SHORT).show()
 
             readOutLoud(recognizedText)
+
+            val captureHistory = hashMapOf("text" to recognizedText, "timestamp" to System.currentTimeMillis())
+
+            db.collection("history").add(captureHistory).addOnSuccessListener{
+                Toast.makeText(context, "Text saved to Firebase.", Toast.LENGTH_SHORT).show()
+            }
         }
         .addOnFailureListener { e ->
             Toast.makeText(context, "Failed to recognize text: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -370,7 +382,6 @@ private fun captureText(capturedImage: Bitmap?, recognizedTexts: MutableList<Str
 //It binds the camera to the lifecycle of the current activity or composable
 //making sure that the camera starts and stops with the app's lifecycle.
 //We create and set up the preview and image capture use cases, then pass the ImageCapture instance to the calling function.
-//tried to add erorhandling, but it dosent do anything
 @Composable
 fun CameraPreview(
     //Lambda to pass ImageCapture instance and to handle captured image
@@ -441,7 +452,22 @@ fun ImageProxy.toBitmapSafe(): Bitmap? {
 //Composable for History Screen
 //Recognized texts are displayed in ugly column boxes for now.
 @Composable
-fun HistoryScreen(recognizedTexts: List<String>) {
+fun HistoryScreen(db: FirebaseFirestore) {
+    val context = LocalContext.current
+    var recognizedTexts by remember {mutableStateOf(listOf<String>())}
+
+    LaunchedEffect(Unit) {
+        db.collection("history")
+            .get()
+            .addOnSuccessListener { documents ->
+                val texts = documents.map { it.getString("text").orEmpty() }
+                recognizedTexts = texts
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(context, "Error loading history: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -485,12 +511,22 @@ fun HistoryScreen(recognizedTexts: List<String>) {
 //Composable for Settings Screen
 //setting scren now has some functionality, specificlly the the slider for tts pitch and speed
 @Composable
-fun SettingsScreen(textToSpeech: TextToSpeech) {
-    var pitchSliderPosition by remember { mutableStateOf(1.0f) }
-    var speedSliderPosition by remember { mutableStateOf(1.0f)}
-    var volumeSliderPosition by remember { mutableStateOf(0f)}
+fun SettingsScreen(textToSpeech: TextToSpeech, saveSettings: (Float, Float) -> Unit, loadSettings: ((Float, Float) -> Unit) -> Unit) {
+    var pitchSliderPosition by remember { mutableFloatStateOf(1.0f) }
+    var speedSliderPosition by remember { mutableFloatStateOf(1.0f) }
+    var volumeSliderPosition by remember { mutableFloatStateOf(0f) }
     var darkModeBool by remember { mutableStateOf(false) }
     var increaseTextSizeBool by remember { mutableStateOf(false) }
+    //val context = LocalContext.current
+    //val db = Firebase.firestore
+
+    LaunchedEffect(Unit) {
+        loadSettings { pitch, speed ->
+            pitchSliderPosition = pitch
+            speedSliderPosition = speed
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -518,7 +554,8 @@ fun SettingsScreen(textToSpeech: TextToSpeech) {
 
         Text(modifier = Modifier
             .padding(16.dp),
-            text = pitchSliderPosition.toString() + " hz")
+            text = "$pitchSliderPosition hz"
+        )
 
         Row {
             Text("Speed")
@@ -532,7 +569,8 @@ fun SettingsScreen(textToSpeech: TextToSpeech) {
             )
         }
         Text(modifier = Modifier
-            .padding(16.dp),text = speedSliderPosition.toString() + " words/min")
+            .padding(16.dp),text = "$speedSliderPosition words/min"
+        )
 
         // Row with volume slider
         Row {
@@ -544,18 +582,18 @@ fun SettingsScreen(textToSpeech: TextToSpeech) {
                 steps = 10)
         }
 
-        // Text displaying value of volumeslider
+        //Text displaying value of volumeslider
         Text(volumeSliderPosition.toString(),
             fontWeight = FontWeight.Bold)
 
 
-        // Accessibility settings start here. These include dark mode and increasing text size
+        //Accessibility settings start here. These include dark mode and increasing text size
         Text(modifier = Modifier
             .padding(16.dp),
             text = "Accessibility Options",
             fontWeight = FontWeight.Bold)
 
-        // Row with switche and describable text for settings for dark mode and increasing size
+        //Row with switche and describable text for settings for dark mode and increasing size
         Row (
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -580,6 +618,10 @@ fun SettingsScreen(textToSpeech: TextToSpeech) {
                 text = "Increase Text Size"
             )
         }
+        Button(onClick = { saveSettings(pitchSliderPosition, speedSliderPosition) }) {
+            Text("Save Settings")
+
+        }
 
     }
 }
@@ -589,6 +631,6 @@ fun SettingsScreen(textToSpeech: TextToSpeech) {
 @Composable
 fun SettingsPreview() {
     MobilProgGroup3Theme {
-        SettingsScreen(textToSpeech = TextToSpeech(LocalContext.current) { })
+        SettingsScreen(textToSpeech = TextToSpeech(LocalContext.current) { }, saveSettings = { _, _ -> }, loadSettings = { onSettingsLoaded -> onSettingsLoaded(1.0f, 1.0f) })
     }
 }
