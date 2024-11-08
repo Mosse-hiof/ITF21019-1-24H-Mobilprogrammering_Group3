@@ -4,6 +4,7 @@ package no.hiof.mobilproggroup3
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
@@ -18,6 +19,7 @@ import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -57,6 +59,11 @@ import java.util.Locale
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.layout.VerticalAlignmentLine
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.sp
 import com.google.firebase.firestore.FirebaseFirestore
@@ -218,7 +225,6 @@ fun MainScreen(
     readOutLoud: (String) -> Unit,
     db: FirebaseFirestore
 ) {
-
     //capturedImage: Holds the Bitmap of the image we capture
     //context: Gets the current context for accessing system resources
     //hasCameraPermission: Keeps track of whether we have camera permission
@@ -597,6 +603,8 @@ fun SettingsScreen(textToSpeech: TextToSpeech, saveSettings: (Float, Float) -> U
                 checked = darkModeBool,
                 onCheckedChange = { darkModeBool = it }
             )
+
+            MaterialTheme.colorScheme
             Spacer(modifier = Modifier.width((16.dp)))
             Text("Dark Mode")
         }
