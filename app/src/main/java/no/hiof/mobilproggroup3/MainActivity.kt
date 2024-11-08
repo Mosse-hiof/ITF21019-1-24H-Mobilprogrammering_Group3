@@ -225,7 +225,6 @@ fun MainScreen(
     readOutLoud: (String) -> Unit,
     db: FirebaseFirestore
 ) {
-
     //capturedImage: Holds the Bitmap of the image we capture
     //context: Gets the current context for accessing system resources
     //hasCameraPermission: Keeps track of whether we have camera permission
