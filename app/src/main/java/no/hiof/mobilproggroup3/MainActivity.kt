@@ -3,8 +3,8 @@ package no.hiof.mobilproggroup3
 //Libraries and imports are now good, we have nothing to worry about. Remove and add as needed
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.pm.PackageManager
-import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
@@ -19,7 +19,6 @@ import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -36,7 +35,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -59,11 +57,9 @@ import java.util.Locale
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.layout.VerticalAlignmentLine
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.sp
 import com.google.firebase.firestore.FirebaseFirestore
@@ -147,7 +143,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                     //Some needed navigation added
                     NavHost(navController, startDestination = "main") {
                         composable("main") { MainScreen(navController, cameraExecutor, this@MainActivity::readOutLoud, db=db) }
-                        composable("history") { HistoryScreen(db=db) }
+                        composable("history") { HistoryScreen(db=db, textToSpeech = textToSpeech) }
                         composable("settings") { SettingsScreen(textToSpeech, saveSettings = ::saveSettings, loadSettings = ::loadSettings) }
                     }
                 }
@@ -454,16 +450,21 @@ fun ImageProxy.toBitmapSafe(): Bitmap? {
 //Composable for History Screen
 //Recognized texts are displayed in ugly column boxes for now.
 @Composable
-fun HistoryScreen(db: FirebaseFirestore) {
+fun HistoryScreen(db: FirebaseFirestore, textToSpeech: TextToSpeech) {
     val context = LocalContext.current
-    var recognizedTexts by remember {mutableStateOf(listOf<String>())}
+    var recognizedTexts by remember { mutableStateOf(listOf<HistoryItem>()) }
 
     LaunchedEffect(Unit) {
         db.collection("history")
             .get()
             .addOnSuccessListener { documents ->
-                val texts = documents.map { it.getString("text").orEmpty() }
-                recognizedTexts = texts
+                recognizedTexts = documents.map { document ->
+                    HistoryItem(
+                        id = document.id,
+                        text = document.getString("text").orEmpty(),
+                        timestamp = document.getLong("timestamp") ?: 0L
+                    )
+                }
             }
             .addOnFailureListener { e ->
                 Toast.makeText(context, "Error loading history: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -484,31 +485,104 @@ fun HistoryScreen(db: FirebaseFirestore) {
             Text(text = "No history available yet.")
         } else {
             Column(modifier = Modifier.fillMaxWidth()) {
-                recognizedTexts.forEach { recognizedText ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp)
-                            .border(1.dp, MaterialTheme.colorScheme.primary)
-                            .width(20.dp)
-                    ) {
-                        if(isSystemInDarkTheme()) {
-                            Text(
-                                text = recognizedText,
-                                color = Color.White,
-                                fontSize = 12.sp)
-                        } else {
-                            Text(
-                                text = recognizedText,
-                                color = Color.Black,
-                                fontSize = 12.sp)
-                        }
+                recognizedTexts.forEach { item ->
+                    HistoryItemView(
+                        historyItem = item,
+                        onDelete = { id -> deleteHistoryItem(db, id, context) },
+                        onEdit = { id, newText -> editHistoryItem(db, id, newText, context) },
+                        onPlayback = { text -> textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, null) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+//=========================== 09.11.2024 HistoryScreen minor additions==========================
+data class HistoryItem(
+    val id: String,
+    val text: String,
+    val timestamp: Long
+)
+
+@Composable
+fun HistoryItemView(
+    historyItem: HistoryItem,
+    onDelete: (String) -> Unit,
+    onEdit: (String, String) -> Unit,
+    onPlayback: (String) -> Unit
+) {
+    var isEditing by remember { mutableStateOf(false) }
+    var newText by remember { mutableStateOf(historyItem.text) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .border(1.dp, MaterialTheme.colorScheme.primary)
+    ) {
+        Column(modifier = Modifier.padding(8.dp)) {
+            if (isEditing) {
+                TextField(
+                    value = newText,
+                    onValueChange = { newText = it },
+                    label = { Text("Edit Text") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Row {
+                    Button(onClick = {
+                        onEdit(historyItem.id, newText)
+                        isEditing = false
+                    }) {
+                        Text("Save")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = { isEditing = false }) {
+                        Text("Cancel")
+                    }
+                }
+            } else {
+                Text(text = historyItem.text, color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp)
+
+                Row {
+                    IconButton(onClick = { onPlayback(historyItem.text) }) {
+                        Icon(Icons.Filled.PlayArrow, contentDescription = "Play")
+                    }
+                    IconButton(onClick = { isEditing = true }) {
+                        Icon(Icons.Filled.Edit, contentDescription = "Edit")
+                    }
+                    IconButton(onClick = { onDelete(historyItem.id) }) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Delete")
                     }
                 }
             }
         }
     }
 }
+
+private fun deleteHistoryItem(db: FirebaseFirestore, id: String, context: Context) {
+    db.collection("history").document(id)
+        .delete()
+        .addOnSuccessListener {
+            Toast.makeText(context, "Text deleted successfully.", Toast.LENGTH_SHORT).show()
+        }
+        .addOnFailureListener { e ->
+            Toast.makeText(context, "Failed to delete text: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+}
+
+private fun editHistoryItem(db: FirebaseFirestore, id: String, newText: String, context: Context) {
+    db.collection("history").document(id)
+        .update("text", newText)
+        .addOnSuccessListener {
+            Toast.makeText(context, "Text updated successfully.", Toast.LENGTH_SHORT).show()
+        }
+        .addOnFailureListener { e ->
+            Toast.makeText(context, "Failed to update text: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+}
+//===========================History additions==========================
+
 
 //Composable for Settings Screen
 //setting scren now has some functionality, specificlly the the slider for tts pitch and speed
