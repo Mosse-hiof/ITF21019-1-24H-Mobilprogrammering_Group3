@@ -282,12 +282,13 @@ fun MainScreen(
                 object : ImageCapture.OnImageCapturedCallback() {
                     override fun onCaptureSuccess(imageProxy: ImageProxy) {
                         val bitmap = imageProxy.toBitmapSafe()
+                        imageProxy.close()
+
                         if (bitmap != null) {
-                            capturedImage = bitmap
+                            captureText(bitmap, context, readOutLoud, db)
                         } else {
                             Toast.makeText(context, "Image Capture Failed", Toast.LENGTH_SHORT).show()
                         }
-                        imageProxy.close()
                     }
 
                     override fun onError(exception: ImageCaptureException) {
@@ -321,8 +322,8 @@ fun MainScreen(
             IconButton(onClick = {
                 captureText(capturedImage, context, readOutLoud, db)
 
-            }) {
-                Icon(Icons.Outlined.Add, contentDescription = "process text", modifier = Modifier.size(48.dp))
+            }) {//no longer need this icon on the main screen because all operation are done with the capture button above now, captured images are now directly passed onto captureText
+                //Icon(Icons.Outlined.Add, contentDescription = "process text", modifier = Modifier.size(48.dp))
                 }}
 
            Spacer(modifier = Modifier.height(20.dp))
