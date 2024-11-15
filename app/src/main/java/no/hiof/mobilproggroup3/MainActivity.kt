@@ -19,6 +19,7 @@ import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -57,12 +58,17 @@ import java.util.Locale
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.sp
 import com.google.firebase.firestore.FirebaseFirestore
+
 
 
 data class BottomNavigationBarItem(
@@ -587,6 +593,7 @@ private fun editHistoryItem(db: FirebaseFirestore, id: String, newText: String, 
 
 //Composable for Settings Screen
 //setting scren now has some functionality, specificlly the the slider for tts pitch and speed
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(textToSpeech: TextToSpeech, saveSettings: (Float, Float) -> Unit, loadSettings: ((Float, Float) -> Unit) -> Unit) {
     var pitchSliderPosition by remember { mutableFloatStateOf(1.0f) }
@@ -618,14 +625,17 @@ fun SettingsScreen(textToSpeech: TextToSpeech, saveSettings: (Float, Float) -> U
             .padding(16.dp)) {
             Text("Language Selection", fontWeight = FontWeight.Bold)
         }
-        Text("TTS Settings", fontWeight = FontWeight.Bold)
+        Text("TextToSpeech Settings", fontWeight = FontWeight.Bold)
         Row {
-            Text("Pitch")
+            Text("Voice Pitch")
             Spacer(modifier = Modifier.width(16.dp))
             Slider(value = pitchSliderPosition,
                 onValueChange = {pitchSliderPosition = it },
                 onValueChangeFinished = { textToSpeech.setPitch(pitchSliderPosition)
-                }, valueRange = 0.5f..2.0f
+                },
+                steps = 3,
+                valueRange = 0.5f..2.0f,
+                thumb = { Box(Modifier.background(MaterialTheme.colorScheme.primary, RoundedCornerShape(20.dp)).size(20.dp).padding(0.dp).width(0.dp))},
             )
         }
 
@@ -635,26 +645,29 @@ fun SettingsScreen(textToSpeech: TextToSpeech, saveSettings: (Float, Float) -> U
         )
 
         Row {
-            Text("Speed")
+            Text("Voice Speed")
             Spacer(modifier = Modifier.width(16.dp))
             Slider(value = speedSliderPosition,
                 onValueChange = {speedSliderPosition = it },
                 onValueChangeFinished = {
                     textToSpeech.setSpeechRate(speedSliderPosition)
                 },
+                thumb = { Box(Modifier.background(MaterialTheme.colorScheme.primary, RoundedCornerShape(20.dp)).size(20.dp).padding(0.dp).width(0.dp))},
+                steps = 2,
                 valueRange = 0.5f..2.0f
             )
         }
         Text(modifier = Modifier
-            .padding(16.dp),text = "$speedSliderPosition words/min"
+            .padding(16.dp),text = "$speedSliderPosition words per minute"
         )
 
         // Row with volume slider
         Row {
-            Text("Volume")
+            Text("Voice Volume")
             Spacer(modifier = Modifier.width(10.dp))
             Slider(value = volumeSliderPosition,
                 onValueChange = {volumeSliderPosition = it},
+                thumb = { Box(Modifier.background(MaterialTheme.colorScheme.primary, RoundedCornerShape(20.dp)).size(20.dp).padding(0.dp).width(0.dp))},
                 valueRange = 0f..10f,
                 steps = 10)
         }
