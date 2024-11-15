@@ -85,6 +85,7 @@ dependencies {
     // https://mvnrepository.com/artifact/androidx.navigation/navigation-fragment-compose
     implementation(libs.androidx.navigation.fragment.compose)
     implementation(libs.androidx.ui.text.google.fonts)
+    implementation(libs.androidx.foundation.android)
 
     // https://mvnrepository.com/artifact/androidx.navigation/navigation-compose
     runtimeOnly(libs.androidx.navigation.compose)
