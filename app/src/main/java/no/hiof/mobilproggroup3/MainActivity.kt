@@ -281,7 +281,7 @@ fun MainScreen(
             Spacer(modifier = Modifier.height(80.dp))
 
             //button for capturing image
-            Row {
+            Column {
             IconButton(onClick = {
                 imageCapture?.takePicture(
                 ContextCompat.getMainExecutor(context),
@@ -652,7 +652,9 @@ fun SettingsScreen(textToSpeech: TextToSpeech, saveSettings: (Float, Float) -> U
                 onValueChangeFinished = {
                     textToSpeech.setSpeechRate(speedSliderPosition)
                 },
-                thumb = { Box(Modifier.background(MaterialTheme.colorScheme.primary, RoundedCornerShape(20.dp)).size(20.dp).padding(0.dp).width(0.dp))},
+                thumb = { Box(Modifier
+                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(20.dp))
+                    .size(20.dp))},
                 steps = 2,
                 valueRange = 0.5f..2.0f
             )
@@ -667,7 +669,9 @@ fun SettingsScreen(textToSpeech: TextToSpeech, saveSettings: (Float, Float) -> U
             Spacer(modifier = Modifier.width(10.dp))
             Slider(value = volumeSliderPosition,
                 onValueChange = {volumeSliderPosition = it},
-                thumb = { Box(Modifier.background(MaterialTheme.colorScheme.primary, RoundedCornerShape(20.dp)).size(20.dp).padding(0.dp).width(0.dp))},
+                thumb = { Box(Modifier
+                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(20.dp))
+                    .size(20.dp))},
                 valueRange = 0f..10f,
                 steps = 10)
         }
