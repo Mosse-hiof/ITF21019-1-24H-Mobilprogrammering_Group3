@@ -550,7 +550,6 @@ fun HistoryItemView(
     ){
         Column(modifier = Modifier
             .padding(8.dp)
-            .verticalScroll(rememberScrollState())
         )
         {
             if (isEditing) {
