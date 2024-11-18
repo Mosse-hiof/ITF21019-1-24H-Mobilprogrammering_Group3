@@ -21,6 +21,9 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.rememberScrollableState
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -58,13 +61,16 @@ import java.util.Locale
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.sp
 import com.google.firebase.firestore.FirebaseFirestore
@@ -84,6 +90,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
     private val db = Firebase.firestore
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -122,7 +129,8 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
                 Scaffold(modifier = Modifier.fillMaxWidth(),
                     bottomBar = {
-                        NavigationBar{
+                        NavigationBar(containerColor = NavigationBarDefaults.containerColor,
+                            contentColor = MaterialTheme.colorScheme.primary){
                             navItems.forEachIndexed { index, item ->
                                 NavigationBarItem(
                                     selected = selectedItemIndex == index,
@@ -265,20 +273,30 @@ fun MainScreen(
             //title of the app, its supposed to be on the top of the screen
             //but as of right now it immediately gets hidden behind the camera screen upon opening
             //maybe move camera screen a bit down to show title
-            Text(
-                text = "SnapReader: Capture and Recognize Text",
-                fontSize = 18.sp,
-                fontStyle = FontStyle.Italic,
-            )
+            Box(modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .fillMaxWidth()
+                )
+            {
+                Text(
+                    text = "SnapReader",
+                    fontSize = 24.sp,
+                    fontStyle = FontStyle.Italic,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .padding(12.dp)
+                        .align(Alignment.Center)
+                )
+            }
 
-
-            Spacer(modifier = Modifier.height(80.dp))
+            Spacer(modifier = Modifier.height(48.dp))
 
             CameraPreview(imageCapture = { capture -> imageCapture = capture }) { bitmap ->
                 capturedImage = bitmap
             }
 
-            Spacer(modifier = Modifier.height(80.dp))
+            Spacer(modifier = Modifier.height(60.dp))
 
             //button for capturing image
             Column {
@@ -517,7 +535,8 @@ fun HistoryItemView(
     historyItem: HistoryItem,
     onDelete: (String) -> Unit,
     onEdit: (String, String) -> Unit,
-    onPlayback: (String) -> Unit
+    onPlayback: (String) -> Unit,
+
 ) {
     var isEditing by remember { mutableStateOf(false) }
     var newText by remember { mutableStateOf(historyItem.text) }
@@ -527,8 +546,13 @@ fun HistoryItemView(
             .fillMaxWidth()
             .padding(8.dp)
             .border(1.dp, MaterialTheme.colorScheme.primary)
-    ) {
-        Column(modifier = Modifier.padding(8.dp)) {
+            .verticalScroll(rememberScrollState())
+    ){
+        Column(modifier = Modifier
+            .padding(8.dp)
+            .verticalScroll(rememberScrollState())
+        )
+        {
             if (isEditing) {
                 TextField(
                     value = newText,
@@ -635,7 +659,9 @@ fun SettingsScreen(textToSpeech: TextToSpeech, saveSettings: (Float, Float) -> U
                 },
                 steps = 3,
                 valueRange = 0.5f..2.0f,
-                thumb = { Box(Modifier.background(MaterialTheme.colorScheme.primary, RoundedCornerShape(20.dp)).size(20.dp).padding(0.dp).width(0.dp))},
+                thumb = { Box(Modifier
+                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(20.dp))
+                    .size(20.dp))},
             )
         }
 
