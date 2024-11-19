@@ -21,16 +21,12 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.rememberScrollableState
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Settings
@@ -62,15 +58,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.sp
 import com.google.firebase.firestore.FirebaseFirestore
@@ -233,10 +225,10 @@ fun saveCapturedImage(context: Context, bitmap: Bitmap): File? {
 
     try {
         FileOutputStream(file).use { out ->
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out) // Save as JPEG
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
         }
         Toast.makeText(context, "Image saved to Gallery", Toast.LENGTH_SHORT).show()
-        return file // Return the file location if needed
+        return file
     } catch (e: IOException) {
         e.printStackTrace()
         Toast.makeText(context, "Failed to save image: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -645,8 +637,6 @@ fun SettingsScreen(textToSpeech: TextToSpeech, saveSettings: (Float, Float) -> U
     var volumeSliderPosition by remember { mutableFloatStateOf(0f) }
     var darkModeBool by remember { mutableStateOf(false) }
     var increaseTextSizeBool by remember { mutableStateOf(false) }
-    //val context = LocalContext.current
-    //val db = Firebase.firestore
 
     LaunchedEffect(Unit) {
         loadSettings { pitch, speed ->
@@ -747,7 +737,7 @@ fun SettingsScreen(textToSpeech: TextToSpeech, saveSettings: (Float, Float) -> U
             Text("Dark Mode")
         }
 
-        // Row with switch
+        //Row with switch
         Row (
             verticalAlignment = Alignment.CenterVertically
         ) {
