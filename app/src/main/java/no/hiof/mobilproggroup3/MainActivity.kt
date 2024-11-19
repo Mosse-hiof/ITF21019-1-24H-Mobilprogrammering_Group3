@@ -3,11 +3,14 @@ package no.hiof.mobilproggroup3
 //Libraries and imports are now good, we have nothing to worry about. Remove and add as needed
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import android.speech.tts.TextToSpeech
 import android.view.ViewGroup
 import android.widget.Toast
@@ -226,6 +229,22 @@ fun saveCapturedImage(context: Context, bitmap: Bitmap): File? {
     try {
         FileOutputStream(file).use { out ->
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+        }
+        val galleryFile = File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES), filename)
+        file.copyTo(galleryFile, overwrite = true)
+
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, filename)
+            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+        }
+        val uri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+        uri?.let {
+            context.contentResolver.openOutputStream(it).use { out ->
+                galleryFile.inputStream().use { input ->
+                    input.copyTo(out!!)
+                }
+            }
         }
         Toast.makeText(context, "Image saved to Gallery", Toast.LENGTH_SHORT).show()
         return file
