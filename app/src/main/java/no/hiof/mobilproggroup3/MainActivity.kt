@@ -74,7 +74,9 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.sp
 import com.google.firebase.firestore.FirebaseFirestore
-
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 
 
 data class BottomNavigationBarItem(
@@ -225,6 +227,24 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     }
 }
 
+fun saveCapturedImage(context: Context, bitmap: Bitmap): File? {
+    val filename = "captured_image_${System.currentTimeMillis()}.jpg"
+    val file = File(context.filesDir, filename)
+
+    try {
+        FileOutputStream(file).use { out ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out) // Save as JPEG
+        }
+        Toast.makeText(context, "Image saved to Gallery", Toast.LENGTH_SHORT).show()
+        return file // Return the file location if needed
+    } catch (e: IOException) {
+        e.printStackTrace()
+        Toast.makeText(context, "Failed to save image: ${e.message}", Toast.LENGTH_SHORT).show()
+    }
+    return null
+}
+
+
 //Main screen of the application AKA landing screen
 //opens up on camera and currently in alpha only uses simple buttons for capture/recognize etc
 //the capture function dosent do a traditional image capture yet, but expect to be polished/added later
@@ -309,6 +329,7 @@ fun MainScreen(
                         imageProxy.close()
 
                         if (bitmap != null) {
+                            saveCapturedImage(context, bitmap)
                             captureText(bitmap, context, readOutLoud, db)
                         } else {
                             Toast.makeText(context, "Image Capture Failed", Toast.LENGTH_SHORT).show()
