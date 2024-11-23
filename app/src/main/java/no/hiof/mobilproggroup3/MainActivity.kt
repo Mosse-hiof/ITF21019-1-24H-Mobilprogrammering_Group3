@@ -5,6 +5,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -65,13 +66,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.Query
 
 
 data class BottomNavigationBarItem(
@@ -84,7 +91,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var textToSpeech: TextToSpeech
-
+    private lateinit var auth: FirebaseAuth
     private val db = Firebase.firestore
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -93,6 +100,12 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         super.onCreate(savedInstanceState)
         cameraExecutor = Executors.newSingleThreadExecutor()
         textToSpeech = TextToSpeech(this, this)
+        auth = Firebase.auth
+
+        if (auth.currentUser == null) {
+            startLoginActivity()
+            return
+        }
 
         //to load the actual setting values from firebase and actually apply them instead of just loading the UI, previously only loaded UI, but pitch and speed changes didnt take effect
         loadSettings { pitch, speed ->
@@ -112,6 +125,12 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                         title = "history",
                         selectedIcon = Icons.Filled.Email,
                         unselectedIcon = Icons.Outlined.Email,
+                    ),
+
+                    BottomNavigationBarItem(
+                        title = "profile",
+                        selectedIcon = Icons.Filled.Person,
+                        unselectedIcon = Icons.Outlined.Person
                     ),
 
                     BottomNavigationBarItem(
@@ -155,11 +174,24 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                     NavHost(navController, startDestination = "main") {
                         composable("main") { MainScreen(navController, cameraExecutor, this@MainActivity::readOutLoud, db=db) }
                         composable("history") { HistoryScreen(db=db, textToSpeech = textToSpeech) }
-                        composable("settings") { SettingsScreen(textToSpeech, saveSettings = ::saveSettings, loadSettings = ::loadSettings) }
+                        composable("profile") { ProfileScreen(auth = auth, db = db) }
+                        composable("settings") { SettingsScreen(textToSpeech, saveSettings = ::saveSettings, loadSettings = ::loadSettings, onLogout = { signOut() }) }
                     }
                 }
             }
         }
+    }
+    //login
+    private fun startLoginActivity() {
+        val intent = Intent(this, LoginActivity::class.java)
+        startActivity(intent)
+        finish()
+    }
+
+   //logout
+    private fun signOut() {
+        auth.signOut()
+        startLoginActivity()
     }
 
     //android tts ''built inn'' api, no dependencies needed
@@ -191,9 +223,21 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     //saving and loading settings
     //saved settings and history can be seen here: https://console.firebase.google.com/project/snapreaderapp/firestore/databases/-default-/data
     //you might need to login with a google account to view the data
+    //added users and login function to the app, so settings are now saved/loaded per user rather then globally
     private fun saveSettings(pitch: Float, speed: Float) {
-        val settings = hashMapOf("pitch" to pitch, "speed" to speed)
-        db.collection("settings").document("userSettings")
+        val userId = auth.currentUser?.uid ?: return
+
+        val settings = hashMapOf(
+            "pitch" to pitch,
+            "speed" to speed,
+            "userId" to userId,
+            "lastUpdated" to System.currentTimeMillis()
+        )
+
+        db.collection("users")
+            .document(userId)
+            .collection("settings")
+            .document("userSettings")
             .set(settings)
             .addOnSuccessListener {
                 Toast.makeText(this, "Settings saved successfully", Toast.LENGTH_SHORT).show()
@@ -204,7 +248,12 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun loadSettings(onSettingsLoaded: (Float, Float) -> Unit) {
-        db.collection("settings").document("userSettings")
+        val userId = auth.currentUser?.uid ?: return
+
+        db.collection("users")
+            .document(userId)
+            .collection("settings")
+            .document("userSettings")
             .get()
             .addOnSuccessListener { document ->
                 if (document != null && document.exists()) {
@@ -214,10 +263,27 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
                     textToSpeech.setPitch(pitch)
                     textToSpeech.setSpeechRate(speed)
+                } else {
+                    val defaultSettings = hashMapOf(
+                        "pitch" to 1.0,
+                        "speed" to 1.0,
+                        "userId" to userId,
+                        "lastUpdated" to System.currentTimeMillis()
+                    )
+
+                    db.collection("users")
+                        .document(userId)
+                        .collection("settings")
+                        .document("userSettings")
+                        .set(defaultSettings)
+                        .addOnSuccessListener {
+                            onSettingsLoaded(1.0f, 1.0f)
+                        }
                 }
             }
             .addOnFailureListener { e ->
                 Toast.makeText(this, "Failed to load settings: ${e.message}", Toast.LENGTH_SHORT).show()
+                onSettingsLoaded(1.0f, 1.0f)
             }
     }
 }
@@ -404,7 +470,17 @@ fun MainScreen(
 //This function checks if we have a captured image and then tries to find any text in it.
 //If it finds some text, it adds that text to our list of recognized texts. If no text is found it just adds blank to the history screen
 //removed the logs and added some error handling,
-private fun captureText(capturedImage: Bitmap?, context: android.content.Context,  readOutLoud: (String) -> Unit, db: FirebaseFirestore) {
+private fun captureText(
+    capturedImage: Bitmap?,
+    context: android.content.Context,
+    readOutLoud: (String) -> Unit,
+    db: FirebaseFirestore
+) {
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
+    if (userId == null) {
+        Toast.makeText(context, "User not logged in", Toast.LENGTH_SHORT).show()
+        return
+    }
 
     if (capturedImage == null) {
         Toast.makeText(context, "No picture to process capture an picture first", Toast.LENGTH_SHORT).show()
@@ -421,11 +497,21 @@ private fun captureText(capturedImage: Bitmap?, context: android.content.Context
 
             readOutLoud(recognizedText)
 
-            val captureHistory = hashMapOf("text" to recognizedText, "timestamp" to System.currentTimeMillis())
-
-            db.collection("history").add(captureHistory).addOnSuccessListener{
-                Toast.makeText(context, "Text saved to Firebase.", Toast.LENGTH_SHORT).show()
-            }
+            val captureHistory = hashMapOf(
+                "text" to recognizedText,
+                "timestamp" to System.currentTimeMillis(),
+                "userId" to userId
+            )
+            db.collection("users")
+                .document(userId)
+                .collection("history")
+                .add(captureHistory)
+                .addOnSuccessListener {
+                    Toast.makeText(context, "Text saved to history.", Toast.LENGTH_SHORT).show()
+                }
+                .addOnFailureListener { e ->
+                    Toast.makeText(context, "Failed to save to history: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
         }
         .addOnFailureListener { e ->
             Toast.makeText(context, "Failed to recognize text: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -510,22 +596,28 @@ fun ImageProxy.toBitmapSafe(): Bitmap? {
 fun HistoryScreen(db: FirebaseFirestore, textToSpeech: TextToSpeech) {
     val context = LocalContext.current
     var recognizedTexts by remember { mutableStateOf(listOf<HistoryItem>()) }
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
 
     LaunchedEffect(Unit) {
-        db.collection("history")
-            .get()
-            .addOnSuccessListener { documents ->
-                recognizedTexts = documents.map { document ->
-                    HistoryItem(
-                        id = document.id,
-                        text = document.getString("text").orEmpty(),
-                        timestamp = document.getLong("timestamp") ?: 0L
-                    )
+        if (userId != null) {
+            db.collection("users")
+                .document(userId)
+                .collection("history")
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .get()
+                .addOnSuccessListener { documents ->
+                    recognizedTexts = documents.map { document ->
+                        HistoryItem(
+                            id = document.id,
+                            text = document.getString("text").orEmpty(),
+                            timestamp = document.getLong("timestamp") ?: 0L
+                        )
+                    }
                 }
-            }
-            .addOnFailureListener { e ->
-                Toast.makeText(context, "Error loading history: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
+                .addOnFailureListener { e ->
+                    Toast.makeText(context, "Error loading history: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+        }
     }
 
     Column(
@@ -623,7 +715,16 @@ fun HistoryItemView(
 }
 
 private fun deleteHistoryItem(db: FirebaseFirestore, id: String, context: Context) {
-    db.collection("history").document(id)
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
+    if (userId == null) {
+        Toast.makeText(context, "User not logged in", Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    db.collection("users")
+        .document(userId)
+        .collection("history")
+        .document(id)
         .delete()
         .addOnSuccessListener {
             Toast.makeText(context, "Text deleted successfully.", Toast.LENGTH_SHORT).show()
@@ -634,7 +735,16 @@ private fun deleteHistoryItem(db: FirebaseFirestore, id: String, context: Contex
 }
 
 private fun editHistoryItem(db: FirebaseFirestore, id: String, newText: String, context: Context) {
-    db.collection("history").document(id)
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
+    if (userId == null) {
+        Toast.makeText(context, "User not logged in", Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    db.collection("users")
+        .document(userId)
+        .collection("history")
+        .document(id)
         .update("text", newText)
         .addOnSuccessListener {
             Toast.makeText(context, "Text updated successfully.", Toast.LENGTH_SHORT).show()
@@ -650,7 +760,7 @@ private fun editHistoryItem(db: FirebaseFirestore, id: String, newText: String, 
 //setting scren now has some functionality, specificlly the the slider for tts pitch and speed
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(textToSpeech: TextToSpeech, saveSettings: (Float, Float) -> Unit, loadSettings: ((Float, Float) -> Unit) -> Unit) {
+fun SettingsScreen(textToSpeech: TextToSpeech, saveSettings: (Float, Float) -> Unit, loadSettings: ((Float, Float) -> Unit) -> Unit, onLogout: () -> Unit) {
     var pitchSliderPosition by remember { mutableFloatStateOf(1.0f) }
     var speedSliderPosition by remember { mutableFloatStateOf(1.0f) }
     var volumeSliderPosition by remember { mutableFloatStateOf(0f) }
@@ -774,6 +884,16 @@ fun SettingsScreen(textToSpeech: TextToSpeech, saveSettings: (Float, Float) -> U
 
         }
 
+// Logout Button
+        Button(
+            onClick = { onLogout() },
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+        ) {
+            Text("Logout")
+        }
+
     }
 }
 
@@ -782,6 +902,6 @@ fun SettingsScreen(textToSpeech: TextToSpeech, saveSettings: (Float, Float) -> U
 @Composable
 fun SettingsPreview() {
     MobilProgGroup3Theme {
-        SettingsScreen(textToSpeech = TextToSpeech(LocalContext.current) { }, saveSettings = { _, _ -> }, loadSettings = { onSettingsLoaded -> onSettingsLoaded(1.0f, 1.0f) })
+        SettingsScreen(textToSpeech = TextToSpeech(LocalContext.current) { }, saveSettings = { _, _ -> }, loadSettings = { onSettingsLoaded -> onSettingsLoaded(1.0f, 1.0f) }, onLogout = { })
     }
 }
