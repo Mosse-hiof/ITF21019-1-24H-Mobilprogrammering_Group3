@@ -1,4 +1,4 @@
-package no.hiof.mobilproggroup3
+package no.hiof.mobilproggroup3.ui.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
@@ -14,7 +14,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -30,11 +29,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(auth: FirebaseAuth, db: FirebaseFirestore) {
+fun ProfileScreen(auth: FirebaseAuth) {
     val context = LocalContext.current
     var showChangePasswordDialog by remember { mutableStateOf(false) }
     var currentPassword by remember { mutableStateOf("") }
@@ -46,7 +43,6 @@ fun ProfileScreen(auth: FirebaseAuth, db: FirebaseFirestore) {
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Profile Picture
         Box(
             modifier = Modifier
                 .size(120.dp)
@@ -61,7 +57,6 @@ fun ProfileScreen(auth: FirebaseAuth, db: FirebaseFirestore) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Email Display
         auth.currentUser?.let { user ->
             Text(
                 text = "Email: ${user.email}",
@@ -71,7 +66,6 @@ fun ProfileScreen(auth: FirebaseAuth, db: FirebaseFirestore) {
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Change Password Button
         Button(
             onClick = { showChangePasswordDialog = true },
             modifier = Modifier.fillMaxWidth()
@@ -80,7 +74,6 @@ fun ProfileScreen(auth: FirebaseAuth, db: FirebaseFirestore) {
         }
     }
 
-    // Change Password Dialog
     if (showChangePasswordDialog) {
         AlertDialog(
             onDismissRequest = { showChangePasswordDialog = false },
@@ -105,7 +98,6 @@ fun ProfileScreen(auth: FirebaseAuth, db: FirebaseFirestore) {
             confirmButton = {
                 Button(
                     onClick = {
-                        // Implement password change logic
                         auth.currentUser?.updatePassword(newPassword)
                             ?.addOnSuccessListener {
                                 Toast.makeText(context, "Password updated successfully", Toast.LENGTH_SHORT).show()
