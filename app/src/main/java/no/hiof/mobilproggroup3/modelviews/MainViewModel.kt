@@ -23,36 +23,40 @@ class MainViewModel : ViewModel() {
         readOutLoud: (String) -> Unit,
         db: FirebaseFirestore
     ) {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid
-        if (userId == null) {
+        val currentUser = FirebaseAuth.getInstance().currentUser?.uid
+        if (currentUser == null) {
             Toast.makeText(context, "User not logged in", Toast.LENGTH_SHORT).show()
             return
         }
 
         if (capturedImage == null) {
-            Toast.makeText(context, "No picture to process capture an picture first", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "No text recognized", Toast.LENGTH_SHORT).show()
             return
         }
 
         val image = InputImage.fromBitmap(capturedImage, 0)
-        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+        val textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
-        recognizer.process(image)
-            .addOnSuccessListener { visionText ->
-                val recognizedText = visionText.text
-                Toast.makeText(context, "Text recognition successful", Toast.LENGTH_SHORT).show()
-                readOutLoud(recognizedText)
+        textRecognizer.process(image)
+                .addOnSuccessListener { visionTextResult ->
+                val recognizedText = visionTextResult.text
+                if (recognizedText.isEmpty()){
+                    Toast.makeText(context, "No text found in image", Toast.LENGTH_SHORT).show()
+                    return@addOnSuccessListener
+                }else {
+                    Toast.makeText(context, "Text recognition successful", Toast.LENGTH_SHORT).show()
+                    readOutLoud(recognizedText) }
 
-                val captureHistory = hashMapOf(
+                val captureTextHistory = hashMapOf(
                     "text" to recognizedText,
-                    "timestamp" to System.currentTimeMillis(),
-                    "userId" to userId
+                    "time" to System.currentTimeMillis(),
+                    "userId" to currentUser
                 )
 
                 db.collection("users")
-                    .document(userId)
+                    .document(currentUser)
                     .collection("history")
-                    .add(captureHistory)
+                    .add(captureTextHistory)
                     .addOnSuccessListener {
                         Toast.makeText(context, "Text saved to history.", Toast.LENGTH_SHORT).show()
                     }

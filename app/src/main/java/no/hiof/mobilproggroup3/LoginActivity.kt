@@ -6,11 +6,20 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.AutofillNode
+import androidx.compose.ui.autofill.AutofillType
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalAutofill
+import androidx.compose.ui.platform.LocalAutofillTree
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
@@ -25,29 +34,30 @@ class LoginActivity : ComponentActivity() {
         auth = Firebase.auth
 
         if (auth.currentUser != null) {
-            startMainActivity()
+            goToMainScreen()
             return
         }
 
         setContent {
             LoginScreen(
-                onLoginSuccess = { startMainActivity() },
-                onError = { message -> showError(message) }
+                onLoginSuccess = { goToMainScreen() },
+                onError = { message -> loginError(message) }
             )
         }
     }
 
-    private fun startMainActivity() {
+    private fun goToMainScreen() {
         val intent = Intent(this, MainActivity::class.java)
         startActivity(intent)
         finish()
     }
 
-    private fun showError(message: String) {
+    private fun loginError(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
@@ -57,6 +67,17 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     val context = LocalContext.current
+
+
+    val autofillNode = AutofillNode(
+        autofillTypes = listOf(AutofillType.EmailAddress),
+        onFill = { email = it }
+    )
+    val passwordAutofillNode = AutofillNode(
+        autofillTypes = listOf(AutofillType.Password),
+        onFill = { password = it }
+    )
+    val autofillTree = LocalAutofillTree.current
 
     Column(
         modifier = Modifier
@@ -70,13 +91,16 @@ fun LoginScreen(
             style = MaterialTheme.typography.headlineMedium
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(40.dp))
 
         TextField(
             value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
             modifier = Modifier.fillMaxWidth()
+                .onGloballyPositioned { coordinates -> autofillTree.plusAssign(autofillNode.apply { boundingBox = coordinates.boundsInWindow() }) },
+            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email),
+            singleLine = true
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -86,13 +110,27 @@ fun LoginScreen(
             onValueChange = { password = it },
             label = { Text("Password") },
             visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .onGloballyPositioned { coordinates ->
+                    autofillTree.plusAssign(passwordAutofillNode.apply {
+                        boundingBox = coordinates.boundsInWindow()
+                    })
+                },
+            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
+            singleLine = true
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
         Button(
             onClick = {
+
+                if (email.isEmpty() || password.isEmpty()) {
+                    onError("Please fill in all fields")
+                    return@Button
+                }
+
                 isLoading = true
                 FirebaseAuth.getInstance().signInWithEmailAndPassword(email, password)
                     .addOnCompleteListener { task ->
@@ -100,14 +138,14 @@ fun LoginScreen(
                         if (task.isSuccessful) {
                             onLoginSuccess()
                         } else {
-                            onError(task.exception?.message ?: "Log in failed")
+                            onError(task.exception?.message ?: "Login failed")
                         }
                     }
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = !isLoading
         ) {
-            Text(if (isLoading) "Logging in..." else "Login")
+            Text(if (isLoading) "Waiting..." else "Login")
         }
 
         Spacer(modifier = Modifier.height(16.dp))

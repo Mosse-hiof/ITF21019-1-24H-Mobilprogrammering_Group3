@@ -38,7 +38,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import no.hiof.mobilproggroup3.CameraPreview
 //import no.hiof.mobilproggroup3.modelviews.MainViewModel.captureText
 import no.hiof.mobilproggroup3.modelviews.MainViewModel
-import no.hiof.mobilproggroup3.saveCapturedImage
+import no.hiof.mobilproggroup3.savePictureOnPhone
 import no.hiof.mobilproggroup3.toBitmapSafe
 import java.util.concurrent.ExecutorService
 import no.hiof.mobilproggroup3.R
@@ -128,7 +128,7 @@ fun MainScreen(
                                 imageProxy.close()
 
                                 if (bitmap != null) {
-                                    saveCapturedImage(context, bitmap)
+                                    savePictureOnPhone(context, bitmap)
                                     viewModel.captureText(bitmap, context, readOutLoud, db)
                                 } else {
                                     Toast.makeText(context, "Image Capture Failed", Toast.LENGTH_SHORT).show()

@@ -1,4 +1,4 @@
-package no.hiof.mobilproggroup3.models
+package no.hiof.mobilproggroup3.historyitems
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.sp
 data class HistoryItem(
     val id: String,
     val text: String,
-    val timestamp: Long
+    val datetime: Long
 )
 
 @Composable

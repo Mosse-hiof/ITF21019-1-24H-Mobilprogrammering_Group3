@@ -8,37 +8,37 @@ import com.google.firebase.auth.FirebaseAuth
 
 class HistoryViewModel : ViewModel() {
 
-    fun deleteHistoryItem(db: FirebaseFirestore, id: String, context: Context) {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid
+    //deleting individual history items from the history screen, does delete from firebase, but is not updated inn app until screen is refreshed
+    //going to a different screen and then going back to history refreshes the screen and the deleted item is removed
+    fun deleteSavedHistoryText(db: FirebaseFirestore, id: String, context: Context) {
+        val currentUser = FirebaseAuth.getInstance().currentUser?.uid
 
-        if (userId == null) {
-            Toast.makeText(context, "User not logged in", Toast.LENGTH_SHORT).show()
+        if (currentUser == null) {
+            Toast.makeText(context, "Log in to use app", Toast.LENGTH_SHORT).show()
             return
         }
 
         db.collection("users")
-            .document(userId)
+            .document(currentUser)
             .collection("history")
             .document(id)
             .delete()
             .addOnSuccessListener {
-                Toast.makeText(context, "history deleted successfully.", Toast.LENGTH_SHORT).show()
-            }
-            .addOnFailureListener { e ->
-                Toast.makeText(context, "Failed to delete history: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "history deleted", Toast.LENGTH_SHORT).show()
             }
     }
 
-    fun editHistoryItem(db: FirebaseFirestore, id: String, newText: String, context: Context) {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+    //for editing the recognized text, the changes are also done in firebase same time
+    fun editingSavedHistoryText(db: FirebaseFirestore, id: String, newText: String, context: Context) {
+        val currentUser = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
         db.collection("users")
-            .document(userId)
+            .document(currentUser)
             .collection("history")
             .document(id)
             .update("text", newText)
             .addOnSuccessListener {
-                Toast.makeText(context, "history updated successfully.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "history updated", Toast.LENGTH_SHORT).show()
             }
     }
 }

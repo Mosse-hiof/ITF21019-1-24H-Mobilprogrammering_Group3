@@ -17,28 +17,28 @@ class SettingsViewModel : ViewModel() {
     //saved settings and history can be seen here: https://console.firebase.google.com/project/snapreaderapp/firestore/databases/-default-/data
     //you might need to login with a google account to view the data
     //added users and login function to the app, so settings are now saved/loaded per user rather then globally
-    fun saveSettings(db: FirebaseFirestore, pitch: Float, speed: Float) {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+    fun savedUserSettings(db: FirebaseFirestore, pitch: Float, speed: Float) {
+        val currentUser = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
-        val settings = hashMapOf(
+        val userSettings = hashMapOf(
             "pitch" to pitch,
             "speed" to speed,
-            "userId" to userId,
+            "userId" to currentUser,
             "lastUpdated" to System.currentTimeMillis()
         )
 
         db.collection("users")
-            .document(userId)
+            .document(currentUser)
             .collection("settings")
             .document("userSettings")
-            .set(settings)
+            .set(userSettings)
     }
 
-    fun loadSettings(db: FirebaseFirestore, onSettingsLoaded: (Float, Float) -> Unit) {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+    fun loadUserSettings(db: FirebaseFirestore, onSettingsLoaded: (Float, Float) -> Unit) {
+        val currentUser = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
         db.collection("users")
-            .document(userId)
+            .document(currentUser)
             .collection("settings")
             .document("userSettings")
             .get()

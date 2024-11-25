@@ -20,8 +20,8 @@ import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import no.hiof.mobilproggroup3.models.HistoryItem
-import no.hiof.mobilproggroup3.models.HistoryItemView
+import no.hiof.mobilproggroup3.historyitems.HistoryItem
+import no.hiof.mobilproggroup3.historyitems.HistoryItemView
 import no.hiof.mobilproggroup3.modelviews.HistoryViewModel
 
 @Composable
@@ -35,14 +35,14 @@ fun HistoryScreen(viewModel: HistoryViewModel, db: FirebaseFirestore, textToSpee
             db.collection("users")
                 .document(userId)
                 .collection("history")
-                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .orderBy("time", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener { documents ->
                     recognizedTexts = documents.map { document ->
                         HistoryItem(
                             id = document.id,
                             text = document.getString("text").orEmpty(),
-                            timestamp = document.getLong("timestamp") ?: 0L
+                            datetime = document.getLong("time") ?: 0L
                         )
                     }
                 }
@@ -69,8 +69,8 @@ fun HistoryScreen(viewModel: HistoryViewModel, db: FirebaseFirestore, textToSpee
                 recognizedTexts.forEach { item ->
                     HistoryItemView(
                         historyItem = item,
-                        onDelete = { id -> viewModel.deleteHistoryItem(db, id, context) },
-                        onEdit = { id, newText -> viewModel.editHistoryItem(db, id, newText, context) },
+                        onDelete = { id -> viewModel.deleteSavedHistoryText(db, id, context) },
+                        onEdit = { id, newText -> viewModel.editingSavedHistoryText(db, id, newText, context) },
                         onPlayback = { text -> textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, null) }
                     )
                 }

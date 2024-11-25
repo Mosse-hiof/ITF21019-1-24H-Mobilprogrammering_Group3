@@ -38,7 +38,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, textToSpeech: TextToSpeech, onL
     var increaseTextSizeBool by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        viewModel.loadSettings(db) { pitch, speed ->
+        viewModel.loadUserSettings(db) { pitch, speed ->
             pitchSliderPosition = pitch
             speedSliderPosition = speed
         }
@@ -155,7 +155,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, textToSpeech: TextToSpeech, onL
                 text = "Increase Text Size"
             )
         }
-        Button(onClick = { viewModel.saveSettings(db, pitchSliderPosition, speedSliderPosition) }) {
+        Button(onClick = { viewModel.savedUserSettings(db, pitchSliderPosition, speedSliderPosition) }) {
             Text("Save Settings")
 
         }

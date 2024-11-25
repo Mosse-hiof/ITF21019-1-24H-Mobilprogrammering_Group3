@@ -92,7 +92,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         }
 
         //to load the actual setting values from firebase and actually apply them instead of just loading the UI, previously only loaded UI, but pitch and speed changes didnt take effect
-        settingsViewModel.loadSettings(db) { pitch, speed ->
+        settingsViewModel.loadUserSettings(db) { pitch, speed ->
             textToSpeech.setPitch(pitch)
             textToSpeech.setSpeechRate(speed)
         }
@@ -206,37 +206,45 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     }
 }
 
-fun saveCapturedImage(context: Context, bitmap: Bitmap): File? {
-    val filename = "captured_image_${System.currentTimeMillis()}.jpg"
-    val file = File(context.filesDir, filename)
+//saves the captured picture locally on the phone. Originally wanted to save to firebase too if we could, but not priority
+//this function first saves the picture in the phone internal storeage then copys the picture to the gallery
+fun savePictureOnPhone(context: Context, bitmap: Bitmap): File? {
+    val picName = "pic_" + System.currentTimeMillis() + ".jpg"
+
+    val tempFile = File(context.filesDir, picName)
 
     try {
-        FileOutputStream(file).use { out ->
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
-        }
-        val galleryFile = File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES), filename)
-        file.copyTo(galleryFile, overwrite = true)
+        val out = FileOutputStream(tempFile)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+        out.close()
+        val picturesFile = File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES), picName)
+        tempFile.copyTo(picturesFile, true)
 
-        val values = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, filename)
-            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
-        }
-        val uri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-        uri?.let {
-            context.contentResolver.openOutputStream(it).use { out ->
-                galleryFile.inputStream().use { input ->
-                    input.copyTo(out!!)
-                }
+        val picSpecs = ContentValues()
+        picSpecs.put(MediaStore.Images.Media.DISPLAY_NAME, picName)
+        picSpecs.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+        picSpecs.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+
+        val galleryUri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, picSpecs)
+
+        if (galleryUri != null) {
+            val galleryStream = context.contentResolver.openOutputStream(galleryUri)
+            val fileStream = picturesFile.inputStream()
+            val buffer = ByteArray(1024)
+            var len: Int
+            while (fileStream.read(buffer).also { len = it } > 0) {
+                galleryStream?.write(buffer, 0, len)
             }
+            fileStream.close()
+            galleryStream?.close()
         }
-        Toast.makeText(context, "Image saved to Gallery", Toast.LENGTH_SHORT).show()
-        return file
-    } catch (e: IOException) {
-        e.printStackTrace()
-        Toast.makeText(context, "Failed to save image: ${e.message}", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "Picture saved to gallery", Toast.LENGTH_SHORT).show()
+        return tempFile
+
+    } catch (e: Exception) {
+        Toast.makeText(context, "Failed to save picture: " + e.message, Toast.LENGTH_SHORT).show()
+        return null
     }
-    return null
 }
 
 //This our other primary requirement/functionality for the alpha build
