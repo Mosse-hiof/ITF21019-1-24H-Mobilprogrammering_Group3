@@ -27,8 +27,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
+import no.hiof.mobilproggroup3.R
 
 @Composable
 fun ProfileScreen(auth: FirebaseAuth) {
@@ -70,27 +72,27 @@ fun ProfileScreen(auth: FirebaseAuth) {
             onClick = { showChangePasswordDialog = true },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Change Password")
+            Text(stringResource(R.string.change_password))
         }
     }
 
     if (showChangePasswordDialog) {
         AlertDialog(
             onDismissRequest = { showChangePasswordDialog = false },
-            title = { Text("Change Password") },
+            title = { Text(stringResource(R.string.change_password)) },
             text = {
                 Column {
                     TextField(
                         value = currentPassword,
                         onValueChange = { currentPassword = it },
-                        label = { Text("Current Password") },
+                        label = { Text(stringResource(R.string.current_password)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     TextField(
                         value = newPassword,
                         onValueChange = { newPassword = it },
-                        label = { Text("New Password") },
+                        label = { Text(stringResource(R.string.new_password)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -108,12 +110,12 @@ fun ProfileScreen(auth: FirebaseAuth) {
                             }
                     }
                 ) {
-                    Text("Update Password")
+                    Text(stringResource(R.string.update_password))
                 }
             },
             dismissButton = {
                 Button(onClick = { showChangePasswordDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )

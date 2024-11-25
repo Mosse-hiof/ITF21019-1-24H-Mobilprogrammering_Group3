@@ -22,10 +22,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.firestore.FirebaseFirestore
+import no.hiof.mobilproggroup3.R
 import no.hiof.mobilproggroup3.modelviews.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,14 +55,14 @@ fun SettingsScreen(viewModel: SettingsViewModel, textToSpeech: TextToSpeech, onL
     ) {
         Text(modifier = Modifier
             .padding(16.dp),
-            text = "Settings", fontWeight = FontWeight.Bold, fontSize = 25.sp)
+            text = stringResource(R.string.settings), fontWeight = FontWeight.Bold, fontSize = 25.sp)
         Row(modifier = Modifier
             .padding(16.dp)) {
-            Text("Language Selection", fontWeight = FontWeight.Bold)
+            Text(text = stringResource(R.string.language_selection), fontWeight = FontWeight.Bold)
         }
-        Text("TextToSpeech Settings", fontWeight = FontWeight.Bold)
+        Text(text = stringResource(R.string.text_to_speech_settings), fontWeight = FontWeight.Bold)
         Row {
-            Text("Voice Pitch")
+            Text(text = stringResource(R.string.voice_pitch))
             Spacer(modifier = Modifier.width(16.dp))
             Slider(value = pitchSliderPosition,
                 onValueChange = {pitchSliderPosition = it },
@@ -82,7 +84,8 @@ fun SettingsScreen(viewModel: SettingsViewModel, textToSpeech: TextToSpeech, onL
         )
 
         Row {
-            Text("Voice Speed")
+            Text(
+                text = stringResource(R.string.voice_speed))
             Spacer(modifier = Modifier.width(16.dp))
             Slider(value = speedSliderPosition,
                 onValueChange = {speedSliderPosition = it },
@@ -104,7 +107,8 @@ fun SettingsScreen(viewModel: SettingsViewModel, textToSpeech: TextToSpeech, onL
 
         //Row with volume slider
         Row {
-            Text("Voice Volume")
+            Text(
+                text = stringResource(R.string.voice_volume))
             Spacer(modifier = Modifier.width(10.dp))
             Slider(value = volumeSliderPosition,
                 onValueChange = {volumeSliderPosition = it},
@@ -125,7 +129,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, textToSpeech: TextToSpeech, onL
         //Accessibility settings start here. These include dark mode and increasing text size
         Text(modifier = Modifier
             .padding(16.dp),
-            text = "Accessibility Options",
+            text = stringResource(R.string.accessibility_options),
             fontWeight = FontWeight.Bold)
 
         //Row with switche and describable text for settings for dark mode and increasing size
@@ -139,7 +143,8 @@ fun SettingsScreen(viewModel: SettingsViewModel, textToSpeech: TextToSpeech, onL
 
             MaterialTheme.colorScheme
             Spacer(modifier = Modifier.width((16.dp)))
-            Text("Dark Mode")
+            Text(
+                text = stringResource(R.string.dark_mode))
         }
 
         //Row with switch
@@ -152,11 +157,12 @@ fun SettingsScreen(viewModel: SettingsViewModel, textToSpeech: TextToSpeech, onL
             )
             Spacer(modifier = Modifier.width(16.dp))
             Text(
-                text = "Increase Text Size"
+                text = stringResource(R.string.increase_text_size)
             )
         }
         Button(onClick = { viewModel.savedUserSettings(db, pitchSliderPosition, speedSliderPosition) }) {
-            Text("Save Settings")
+            Text(
+                text = stringResource(R.string.save_settings))
 
         }
 
@@ -167,7 +173,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, textToSpeech: TextToSpeech, onL
                 .padding(16.dp)
                 .fillMaxWidth()
         ) {
-            Text("Logout")
+            Text(text = stringResource(R.string.logout))
         }
 
     }

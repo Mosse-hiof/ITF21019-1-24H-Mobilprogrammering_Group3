@@ -1,3 +1,27 @@
 <resources>
     <string name="app_name">SnapReader</string>
+    <string name="voice_speed">Voice Speed</string>
+    <string name="voice_volume">Voice Volume</string>
+    <string name="accessibility_options">Accessibility Options</string>
+    <string name="dark_mode">Dark Mode</string>
+    <string name="increase_text_size">Increase Text Size</string>
+    <string name="save_settings">Save Settings</string>
+    <string name="logout">Logout</string>
+    <string name="settings">Settings</string>
+    <string name="language_selection">Language Selection</string>
+    <string name="text_to_speech_settings">TextToSpeech Settings</string>
+    <string name="voice_pitch">Voice Pitch</string>
+    <string name="history_log">History Log</string>
+    <string name="no_history_available_yet">No history available yet</string>
+    <string name="change_password">Change Password</string>
+    <string name="current_password">Current Password</string>
+    <string name="new_password">New Password</string>
+    <string name="update_password">Update Password</string>
+    <string name="cancel">Cancel</string>
+    <string name="snapreader_login">SnapReader Login</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="request_permissions">Requesting Permissions And Getting the App Ready</string>
+    <string name="new_account">Don\'t have an account? Register</string>
+    <string name="new_user">Register New User</string>
 </resources>

@@ -14,12 +14,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import no.hiof.mobilproggroup3.R
 import no.hiof.mobilproggroup3.historyitems.HistoryItem
 import no.hiof.mobilproggroup3.historyitems.HistoryItemView
 import no.hiof.mobilproggroup3.modelviews.HistoryViewModel
@@ -59,11 +61,11 @@ fun HistoryScreen(viewModel: HistoryViewModel, db: FirebaseFirestore, textToSpee
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "History Log", fontWeight = FontWeight.Bold, fontSize = 25.sp)
+        Text(text = stringResource(R.string.history_log), fontWeight = FontWeight.Bold, fontSize = 25.sp)
         Spacer(modifier = Modifier.height(20.dp))
 
         if (recognizedTexts.isEmpty()) {
-            Text(text = "No history available yet.")
+            Text(text = stringResource(R.string.no_history_available_yet))
         } else {
             Column(modifier = Modifier.fillMaxWidth()) {
                 recognizedTexts.forEach { item ->
