@@ -20,6 +20,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalAutofill
 import androidx.compose.ui.platform.LocalAutofillTree
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -85,7 +86,7 @@ fun RegisterScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Register New User",
+            text = stringResource(R.string.new_user),
             style = MaterialTheme.typography.headlineMedium
         )
 
@@ -94,7 +95,7 @@ fun RegisterScreen(
         TextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Email") },
+            label = { Text(stringResource(R.string.email)) },
             modifier = Modifier
                 .fillMaxWidth()
                 .onGloballyPositioned { coordinates ->
@@ -111,7 +112,7 @@ fun RegisterScreen(
         TextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Password") },
+            label = { Text(stringResource(R.string.password)) },
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier
                 .fillMaxWidth()
