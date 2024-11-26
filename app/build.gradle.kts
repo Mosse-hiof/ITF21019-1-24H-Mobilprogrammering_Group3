@@ -21,6 +21,15 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("C:/Users/mosse/Documents/GitHub/ITF21019-1-24H-Mobilprogrammering_Group3/snapreader_keystore.jks")
+            storePassword = "Snapreader12345"
+            keyAlias = "snapreader_key"
+            keyPassword = "Snapreaderkey12345"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -28,6 +37,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
