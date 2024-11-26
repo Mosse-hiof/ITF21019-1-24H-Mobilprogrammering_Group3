@@ -31,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
 import no.hiof.mobilproggroup3.R
+import no.hiof.mobilproggroup3.modelviews.SettingsViewModel
 
 @Composable
 fun ProfileScreen(auth: FirebaseAuth) {
@@ -44,7 +45,10 @@ fun ProfileScreen(auth: FirebaseAuth) {
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    )
+
+    {
+        Spacer(modifier = Modifier.height(32.dp))
         Box(
             modifier = Modifier
                 .size(120.dp)

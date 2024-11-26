@@ -19,8 +19,12 @@ import androidx.activity.viewModels
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
@@ -47,6 +51,9 @@ import java.util.Locale
 import androidx.compose.runtime.Composable
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import java.io.File
@@ -126,22 +133,31 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                 )
 
                 val navController = rememberNavController()
-                var selectedItemIndex by rememberSaveable { mutableIntStateOf(0) }
+
+                val currentBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentDestination = currentBackStackEntry?.destination?.route
+
+                val selectedItemIndex = navItems.indexOfFirst { it.title == currentDestination }
+                    .takeIf { it != -1 } ?: 0
 
                 Scaffold(modifier = Modifier.fillMaxWidth(),
+                    topBar = {
+                        DynamicTopBar(navController)
+                             },
                     bottomBar = {
-                        NavigationBar(containerColor = NavigationBarDefaults.containerColor,
+                        NavigationBar(containerColor = MaterialTheme.colorScheme.onPrimary,
                             contentColor = MaterialTheme.colorScheme.primary){
                             navItems.forEachIndexed { index, item ->
                                 NavigationBarItem(
                                     selected = selectedItemIndex == index,
                                     onClick = {
-                                        selectedItemIndex = index
-                                        navController.navigate(item.title)
+                                        navController.navigate(item.title) {
+                                            launchSingleTop = true
+                                        }
                                     },
                                     icon = {
                                         Icon(
-                                            imageVector = if ( index == selectedItemIndex) {
+                                            imageVector = if (selectedItemIndex == index) {
                                                 item.selectedIcon
                                             } else item.unselectedIcon,
                                             contentDescription = item.title
@@ -159,7 +175,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                     NavHost(navController, startDestination = "main") {
                         composable("main") { MainScreen(viewModel = mainViewModel, navController, cameraExecutor, this@MainActivity::readOutLoud, db=db) }
                         composable("history") { HistoryScreen(viewModel = historyViewModel, db=db, textToSpeech = textToSpeech) }
-                        composable("profile") { ProfileScreen(auth = auth) }
+                        composable("profile") { ProfileScreen(auth = auth)}
                         composable("settings") { SettingsScreen(viewModel = settingsViewModel, textToSpeech,db = db, onLogout = { signOut() }) }
                     }
                 }
@@ -315,5 +331,42 @@ fun ImageProxy.toBitmapSafe(): Bitmap? {
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
     } catch (e: Exception) {
         null
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DynamicTopBar(navController: NavController) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination?.route
+
+    val title = when (currentDestination) {
+        "main" -> "SnapReader"
+        "history" -> "History Log"
+        "profile" -> "Profile"
+        "settings" -> "Settings"
+        else -> "SnapReader"
+    }
+
+    val showBackButton = navController.previousBackStackEntry != null && currentDestination != "main"
+
+    CenterAlignedTopAppBar(
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.onPrimary),
+        title = { Text(text = title) },
+        navigationIcon = {
+            if (showBackButton) {
+                run { BackButton(navController) }
+            } else null
+        }
+    )
+}
+
+@Composable
+fun BackButton(navController: NavController) {
+    IconButton(onClick = { navController.popBackStack() }) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = stringResource(R.string.back_button)
+        )
     }
 }
