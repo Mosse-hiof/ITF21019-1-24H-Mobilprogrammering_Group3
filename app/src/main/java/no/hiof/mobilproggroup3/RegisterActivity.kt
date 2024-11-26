@@ -103,8 +103,6 @@ fun RegisterScreen(
                         boundingBox = coordinates.boundsInWindow()
                     })
                 },
-            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email),
-            singleLine = true
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -121,8 +119,6 @@ fun RegisterScreen(
                         boundingBox = coordinates.boundsInWindow()
                     })
                 },
-            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
-            singleLine = true
         )
 
         Spacer(modifier = Modifier.height(32.dp))

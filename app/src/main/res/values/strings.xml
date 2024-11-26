@@ -24,4 +24,5 @@
     <string name="request_permissions">Requesting Permissions And Getting the App Ready</string>
     <string name="new_account">Don\'t have an account? Register</string>
     <string name="new_user">Register New User</string>
+    <string name="back_button">Back button</string>
 </resources>

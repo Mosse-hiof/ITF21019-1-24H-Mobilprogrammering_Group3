@@ -100,8 +100,6 @@ fun LoginScreen(
             label = { Text(stringResource(R.string.email)) },
             modifier = Modifier.fillMaxWidth()
                 .onGloballyPositioned { coordinates -> autofillTree.plusAssign(autofillNode.apply { boundingBox = coordinates.boundsInWindow() }) },
-            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email),
-            singleLine = true
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -118,8 +116,6 @@ fun LoginScreen(
                         boundingBox = coordinates.boundsInWindow()
                     })
                 },
-            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
-            singleLine = true
         )
 
         Spacer(modifier = Modifier.height(32.dp))
