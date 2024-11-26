@@ -67,7 +67,6 @@ fun RegisterScreen(
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
 
-    val autofill = LocalAutofill.current
     val autofillNode = AutofillNode(
         autofillTypes = listOf(AutofillType.EmailAddress),
         onFill = { email = it }

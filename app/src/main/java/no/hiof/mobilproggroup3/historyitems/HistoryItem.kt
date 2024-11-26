@@ -29,20 +29,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-data class HistoryItem(
-    val id: String,
-    val text: String,
-    val datetime: Long
-)
+data class HistoryItem(val id: String, val text: String, val datetime: Long)
 
 @Composable
-fun HistoryItemView(
-    historyItem: HistoryItem,
-    onDelete: (String) -> Unit,
-    onEdit: (String, String) -> Unit,
-    onPlayback: (String) -> Unit,
-
-    ) {
+fun HistoryItemView(historyItem: HistoryItem, onDelete: (String) -> Unit, onEdit: (String, String) -> Unit, onPlayback: (String) -> Unit, ) {
     var isEditing by remember { mutableStateOf(false) }
     var newText by remember { mutableStateOf(historyItem.text) }
 
